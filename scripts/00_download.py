@@ -79,7 +79,14 @@ def main() -> None:
 
     cfg = load_config(args.config)
     raw_dir = cfg.paths.raw_dir
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        raw_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        # Kaggle's /kaggle/input is read-only; the files have to already be mounted there
+        if not raw_dir.exists():
+            print(f"cannot create {raw_dir} ({exc}). On Kaggle, attach the dataset first "
+                  "(Add Input) and re-run the cell that sets RAW_DIR.")
+            sys.exit(1)
     manifest = fetch_manifest(cfg.paths.tables_dir / "dataverse_manifest.json")
     if args.max_days:
         manifest = manifest[: args.max_days]
@@ -87,8 +94,9 @@ def main() -> None:
     print(f"{len(manifest)} files, {total_gb:.2f} GB ({total_gb * 1e9 / 2**30:.2f} GiB) in the Dataverse record")
 
     missing, bad = [], []
+    existing = {p.name: p for p in raw_dir.rglob("sms-call-internet-mi-*.txt")} if raw_dir.exists() else {}
     for entry in manifest:
-        path = raw_dir / entry["filename"]
+        path = existing.get(entry["filename"], raw_dir / entry["filename"])
         if not path.exists():
             if args.token:
                 print(f"downloading {entry['filename']} ({entry['filesize'] / 2**20:.0f} MB)")

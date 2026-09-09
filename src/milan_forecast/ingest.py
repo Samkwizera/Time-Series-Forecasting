@@ -37,7 +37,8 @@ KEY_COLUMNS = ["square_id", "time_interval"]
 
 
 def list_raw_files(raw_dir: Path, max_days: int | None = None) -> list[Path]:
-    files = sorted(p for p in raw_dir.glob("sms-call-internet-mi-*.txt") if RAW_FILE_RE.search(p.name))
+    # rglob because Kaggle datasets often nest the 62 files one folder down
+    files = sorted(p for p in raw_dir.rglob("sms-call-internet-mi-*.txt") if RAW_FILE_RE.search(p.name))
     if max_days:
         files = files[:max_days]
     return files
