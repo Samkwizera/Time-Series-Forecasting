@@ -80,7 +80,10 @@ def main() -> None:
     if args.model != "baselines":
         summary = overall.iloc[0].to_dict()
         per_h = metrics.groupby("horizon")["mase"].mean().round(3).to_dict()
-        logger.log(f"{args.run}_{args.part}", params, summary, note=args.note,
+        defaults = {"sarima": sarima, "lightgbm": lgbm}.get(args.model, rnn).DEFAULT_PARAMS
+        # log the full effective config, not just the overrides, so runs are comparable later
+        effective = {**defaults, **params}
+        logger.log(f"{args.run}_{args.part}", effective, summary, note=args.note,
                    extra={"part": args.part, "mase_by_horizon": per_h, "info": info})
 
 

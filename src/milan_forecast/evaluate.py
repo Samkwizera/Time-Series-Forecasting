@@ -136,7 +136,7 @@ class ExperimentLogger:
                          "the *Reasoning / next step* column records why the following run was configured as it was.\n\n")
                 fh.write("| model | run | params | val MAE | val sMAPE | val MASE | s | reasoning / next step |\n")
                 fh.write("|---|---|---|---|---|---|---|---|\n")
-            p = ", ".join(f"{k}={v}" for k, v in params.items())
+            p = ", ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in params.items())
             fh.write(f"| {self.model} | {run_id} | {p} | {metrics.get('mae', float('nan')):.3g} | "
                      f"{metrics.get('smape', float('nan')):.2f} | {metrics.get('mase', float('nan')):.3f} | {elapsed} | {note} |\n")
         return path

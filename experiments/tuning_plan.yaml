@@ -1,0 +1,63 @@
+# Ordered tuning rounds. Each round is one validation-split run of scripts/04_train.py.
+# `why` is written *before* the run: what the previous result suggested and what this
+# change is meant to test. After each round scripts/05_tune.py appends the result to
+# experiments/experiment_log.md, so the log reads as the actual experimental trail.
+#
+# Rounds are grouped by model. Later rounds may reference the best of the previous ones.
+
+sarima:
+  - run: s1
+    params: {order: [1, 0, 0], seasonal_order: [0, 1, 0, 24], fourier_k: 0, holiday_exog: false}
+    why: "Minimal seasonal random walk + AR(1): the simplest structure consistent with the ACF (slow decay at multiples of 24). Reference point for what the seasonal difference alone buys."
+  - run: s2
+    params: {order: [1, 0, 1], seasonal_order: [1, 1, 1, 24], fourier_k: 0, holiday_exog: false}
+    why: "Add MA terms at lag 1 and 24: PACF after seasonal differencing shows a negative spike at 24, the classic signature of a seasonal MA(1)."
+  - run: s3
+    params: {order: [1, 0, 1], seasonal_order: [1, 1, 1, 24], fourier_k: 3, holiday_exog: false}
+    why: "Weekly cycle cannot be modelled with a 168-period SARIMA (state too large). Add 3 Fourier pairs of period 168 h as exogenous regressors (dynamic harmonic regression)."
+  - run: s4
+    params: {order: [1, 0, 1], seasonal_order: [1, 1, 1, 24], fourier_k: 3, holiday_exog: true}
+    why: "Public holidays behave like Sundays; a holiday dummy lets the level drop without disturbing the seasonal state."
+  - run: s5
+    params: {order: [2, 0, 1], seasonal_order: [1, 1, 1, 24], fourier_k: 5, holiday_exog: true}
+    why: "Check whether more harmonics (5) and a second AR lag improve or overfit; AIC vs validation MASE decides."
+
+lightgbm:
+  - run: g1
+    params: {lags: short, use_calendar: false, use_rolling: false}
+    why: "Lags 1-24 only: how much can trees recover from the last day alone? Establishes the value of the seasonal/weekly lags added next."
+  - run: g2
+    params: {lags: full, use_calendar: false, use_rolling: false}
+    why: "Add lags 36-168 (two-day and weekly cycle) identified in the ACF."
+  - run: g3
+    params: {lags: full, use_calendar: true, use_rolling: false}
+    why: "Add calendar features of origin and target (hour, weekday, holiday) so the model can anticipate the day type of the target time, which lags alone cannot at 24 h."
+  - run: g4
+    params: {lags: full, use_calendar: true, use_rolling: true}
+    why: "Add rolling means/stds (6, 24, 168 h) and differences: level and volatility summaries that reduce reliance on any single lag."
+  - run: g5
+    params: {lags: full, use_calendar: true, use_rolling: true, num_leaves: 15, learning_rate: 0.03, min_child_samples: 50}
+    why: "Regularise: fewer leaves, lower learning rate and larger leaves to test whether g4 overfits the pooled data (compare train/val gap)."
+  - run: g6
+    params: {lags: full, use_calendar: true, use_rolling: true, num_leaves: 63, learning_rate: 0.05, min_child_samples: 20}
+    why: "Opposite direction: more capacity. Together with g5 this brackets the capacity sweet spot before the Optuna search."
+
+lstm:
+  - run: l1
+    params: {cell: lstm, hidden_size: 32, num_layers: 1, dropout: 0.0, lr: 0.001, input_window: 24}
+    why: "Small network with one day of context, to see the floor of the architecture and whether training is stable."
+  - run: l2
+    params: {cell: lstm, hidden_size: 32, num_layers: 1, dropout: 0.0, lr: 0.001, input_window: 168}
+    why: "One week of context: the weekly cycle should now be visible to the network."
+  - run: l3
+    params: {cell: lstm, hidden_size: 64, num_layers: 1, dropout: 0.0, lr: 0.001, input_window: 168}
+    why: "Double the hidden size to test whether l2 was capacity-limited."
+  - run: l4
+    params: {cell: lstm, hidden_size: 64, num_layers: 2, dropout: 0.2, lr: 0.001, input_window: 168}
+    why: "Deeper network with dropout: more capacity, but regularised against the small number of training weeks."
+  - run: l5
+    params: {cell: gru, hidden_size: 64, num_layers: 1, dropout: 0.0, lr: 0.001, input_window: 168}
+    why: "GRU has fewer parameters than LSTM at equal hidden size; test whether the gating simplification helps with ~6 weeks of data."
+  - run: l6
+    params: {cell: lstm, hidden_size: 64, num_layers: 1, dropout: 0.1, lr: 0.0005, weight_decay: 0.00001, input_window: 168}
+    why: "Lower learning rate and light weight decay to smooth the validation curve of the best previous configuration."
