@@ -1,0 +1,40 @@
+# Small configuration for end-to-end smoke tests on synthetic data (20x20 grid, 14 days).
+# Usage: MILAN_CONFIG=config/smoke.yaml python scripts/01_ingest.py --synthetic-days 14
+
+paths:
+  raw_dir: data/smoke/raw
+  interim_dir: data/smoke/interim
+  processed_dir: data/smoke/processed
+  figures_dir: reports/smoke/figures
+  tables_dir: reports/smoke/tables
+  experiments_dir: experiments/smoke
+  models_dir: models/smoke
+
+data:
+  raw_columns: [square_id, time_interval, country_code, sms_in, sms_out, call_in, call_out, internet]
+  activities: [sms_in, sms_out, call_in, call_out, internet]
+  n_cells: 400
+  grid_side: 20
+  interval_minutes: 10
+  timezone: Europe/Rome
+  start_date: "2013-11-01"
+  end_date: "2013-11-14"
+  max_days: null
+  chunk_rows: 200_000
+
+eda:
+  hourly_freq: "1h"
+  n_clusters: 4
+  landmarks:
+    centre: 210
+  n_cells_per_cluster: 1
+
+forecast:
+  target_activity: internet
+  input_window: 72
+  horizons: [1, 6, 24]
+  split:
+    train_end: "2013-11-09 23:00"
+    val_end: "2013-11-11 23:00"
+  transform: log1p
+  seed: 42
