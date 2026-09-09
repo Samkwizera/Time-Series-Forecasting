@@ -2,8 +2,8 @@
 data/*
 !data/README.md
 
-# Trained models and checkpoints
-models/
+# Trained models and checkpoints (root-level only; src/milan_forecast/models is source code)
+/models/
 
 # Python
 .venv/

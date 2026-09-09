@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import seaborn as sns  # noqa: E402
 
 PALETTE = {"naive": "#9e9e9e", "seasonal_naive": "#616161", "sarima": "#1f77b4",
-           "lightgbm": "#2ca02c", "lstm": "#d62728"}
+           "lightgbm": "#2ca02c", "lstm": "#d62728", "gru": "#e377c2", "weekly_naive": "#bdbdbd"}
 
 
 def setup_style() -> None:

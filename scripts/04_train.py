@@ -39,7 +39,9 @@ def main() -> None:
     parser.add_argument("--model", required=True, choices=["baselines", "sarima", "lightgbm", "lstm", "gru"])
     parser.add_argument("--part", default="val", choices=["val", "test"])
     parser.add_argument("--run", default="default", help="short run id used in file names and the log")
-    parser.add_argument("--params", default="{}", help="JSON dict of model parameters overriding the defaults")
+    parser.add_argument("--params", default="{}",
+                        help="JSON dict of model parameters overriding the defaults, or @path/to/params.json "
+                             "(useful on Windows shells that strip quotes)")
     parser.add_argument("--note", default="", help="reasoning recorded in the experiment log")
     parser.add_argument("--series", nargs="*", default=None, help="restrict to these selected-cell names")
     args = parser.parse_args()
@@ -49,7 +51,10 @@ def main() -> None:
     cfg = load_config(args.config)
     paths = cfg.paths.ensure()
     data = load_forecast_data(cfg, args.series)
-    params = json.loads(args.params)
+    raw = args.params
+    if raw.startswith("@"):
+        raw = Path(raw[1:]).read_text()
+    params = json.loads(raw)
     pred_dir = paths.experiments_dir / "predictions"
     pred_dir.mkdir(parents=True, exist_ok=True)
 

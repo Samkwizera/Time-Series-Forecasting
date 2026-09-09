@@ -26,28 +26,29 @@ src/milan_forecast/
   features.py      lag / rolling / calendar features relative to the forecast origin
   evaluate.py      MAE, RMSE, sMAPE, MASE, Diebold-Mariano test, experiment logger
   analysis.py      comparative plots, error-over-time, residual and worst-case analysis
-  models/          baseline.py, sarima.py, lgbm.py, rnn.py (LSTM/GRU)
+  models/          baseline.py, sarima.py, lgbm.py, rnn.py (LSTM/GRU), _common.py (fit/eval origins)
 scripts/           00_download 01_ingest 02_eda 03_tsa 04_train 05_tune 06_compare 07_report_assets
-run_all.sh         the whole pipeline in one command
+run_all.sh         the whole pipeline in one command (bash); run_all.ps1 is the PowerShell equivalent
 notebooks/         run_pipeline_kaggle_colab.ipynb (same pipeline on Kaggle or Colab)
 experiments/       tuning_plan.yaml (rounds + rationale), experiment_log.md, runs/*.json, predictions/
 reports/           figures/ and tables/ written by the scripts (inputs to the report)
 report/            report.tex (IEEE), references.bib, build.sh -> report.pdf
 video/outline.md   7-10 minute presentation plan tied to the figures
-tests/             pytest suite on the synthetic fixture (< 10 s)
+tests/             pytest: ingestion on a synthetic fixture, and the forecasting layer
+                   (split leakage, features, metrics, DM test, all four model modules)
 ```
 
 ## Setup
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate      # Windows: python -m venv .venv; .venv\Scripts\activate
 pip install -r requirements.txt
 pip install -e .
-pytest
+pytest                                                   # ~1.5 min, no real data needed
 ```
 
-CPU-only PyTorch is enough for the LSTM experiments; on a GPU machine install the
-matching CUDA wheel and the code picks it up automatically.
+Tested with Python 3.10-3.14. CPU-only PyTorch is enough for the LSTM experiments; on a
+GPU machine install the matching CUDA wheel and the code picks it up automatically.
 
 ## Getting the data
 
@@ -65,7 +66,14 @@ The exact size is 20,804,803,507 bytes = 20.8 GB = 19.4 GiB (Dataverse displays 
 
 ```bash
 ./run_all.sh                     # everything, real data; ~1 h ingestion + tuning on CPU
+.\run_all.ps1                    # same thing from PowerShell
 ```
+
+How each model is fitted and evaluated (shared protocol, see `src/milan_forecast/models/__init__.py`):
+`--part val` fits on the training split and forecasts every origin whose targets fall in
+the validation split; `--part test` fits on train+validation and forecasts the test split.
+Early stopping (LightGBM trees, LSTM epochs) uses the last week of the fitting window,
+never the split being evaluated.
 
 or stage by stage:
 
@@ -78,6 +86,7 @@ python scripts/05_tune.py --model sarima           # rounds from experiments/tun
 python scripts/05_tune.py --model lightgbm --optuna 20
 python scripts/05_tune.py --model lstm
 python scripts/04_train.py --model lightgbm --part test --run g4 --params '{...}'   # final runs
+python scripts/04_train.py --model lstm --part test --run l4 --params @params.json  # PowerShell strips JSON quotes; use a file
 python scripts/06_compare.py --runs sarima=s3 lightgbm=g4 lstm=l4
 python scripts/07_report_assets.py && report/build.sh
 ```
@@ -99,8 +108,11 @@ the more comfortable option. The notebook ends by zipping `reports/` and
 ### Smoke test without the real data
 
 ```bash
-MILAN_CONFIG=config/smoke.yaml ./run_all.sh 28      # synthetic 20x20 grid, 28 days, ~6 min
+MILAN_CONFIG=config/smoke.yaml ./run_all.sh 28                  # synthetic 20x20 grid, 28 days
+$env:MILAN_CONFIG="config/smoke.yaml"; .\run_all.ps1 28         # PowerShell
 ```
+
+Expect roughly 25 min on a laptop CPU (SARIMA rolling forecasts and the LSTM rounds dominate).
 
 Outputs go to `reports/smoke/` and `experiments/smoke/` (git-ignored). The
 synthetic data only exercises the code path; no number from it belongs in the report.
@@ -110,6 +122,9 @@ synthetic data only exercises the code path; no number from it belongs in the re
 ```bash
 report/build.sh            # needs tectonic or TeX Live; reads reports/tables/* via scripts/07_report_assets.py
 ```
+
+On Windows without bash: `python scripts/07_report_assets.py` then `tectonic report/report.tex`
+(install tectonic with `winget install tectonic` or use Overleaf with the `report/` folder).
 
 The report never hard-codes a result: `scripts/07_report_assets.py` turns the CSVs
 into `report/generated/*.tex` (tables and `\newcommand` macros). Passages whose
