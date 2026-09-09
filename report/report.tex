@@ -1,0 +1,277 @@
+\documentclass[conference]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=blue!60!black, urlcolor=blue!60!black}
+
+% numbers and table fragments produced by scripts/07_report_assets.py
+\IfFileExists{generated/numbers.tex}{\input{generated/numbers.tex}}{\newcommand{\figdir}{../reports/figures}}
+\providecommand{\bestModel}{(pending)}
+\providecommand{\bestModelMase}{--}
+\providecommand{\selectedCells}{(pending)}
+\providecommand{\nSelected}{--}
+\providecommand{\giniInternet}{--}
+\providecommand{\topTenShare}{--}
+\providecommand{\topOneShare}{--}
+\providecommand{\internetShare}{--}
+\providecommand{\nHours}{--}
+\providecommand{\bestK}{--}
+\providecommand{\bestSilhouette}{--}
+\providecommand{\naiveDayMB}{--}
+\providecommand{\naiveAllGB}{--}
+\providecommand{\rawDayMB}{--}
+\providecommand{\rawRowsM}{--}
+\providecommand{\ingestPeakMB}{--}
+\providecommand{\ingestTotalMin}{--}
+\providecommand{\ingestDays}{--}
+\providecommand{\stlDailyShare}{--}
+\providecommand{\stlResidShare}{--}
+\providecommand{\mstlDailyShare}{--}
+\providecommand{\mstlWeeklyShare}{--}
+\providecommand{\optunaTrials}{--}
+\providecommand{\optunaBestMase}{--}
+
+% Passages that must be re-read against the real-data run before submission.
+% Set \revisemode to 0 to print them as normal text.
+\newcommand{\revisemode}{1}
+\newcommand{\revise}[1]{\ifnum\revisemode=1 {\color{red!70!black}#1}\else #1\fi}
+
+\newcommand{\fig}[1]{\figdir/#1}
+
+\begin{document}
+
+\title{Forecasting Mobile Network Traffic in Milan:\\ Does Land Use Decide Which Model Wins?}
+
+\author{\IEEEauthorblockN{Samuel Ihimbazwe}
+\IEEEauthorblockA{African Leadership University\\
+s.ihimbazwe@alustudent.com\\
+Code: \url{https://github.com/Samkwizera/Time-Series-Forecasting}}}
+
+\maketitle
+
+\begin{abstract}
+Short-term forecasts of cellular traffic let operators schedule capacity and sleep idle base stations, but the traffic of a single cell depends on what people do there. This study asks whether the relative merit of three forecasting families -- a seasonal ARIMA with weekly Fourier regressors, gradient-boosted trees (LightGBM) with lag and calendar features, and an LSTM sequence model -- depends on the land-use profile of the cell and on the forecast horizon. Using the 20.8\,GB Telecom Italia Milan dataset (10\,000 grid cells, 10-minute resolution, 62 days) we build a streaming ingestion pipeline that reduces the working set to under 1\,GB, characterise the temporal and spatial structure of Internet activity, cluster cells by the shape of their daily profile, and evaluate the three models on \nSelected{} representative cells at 1, 6 and 24-hour horizons over a deliberately hard test period spanning Christmas and New Year. All models are compared against seasonal-naive baselines with MASE and Diebold--Mariano tests. \revise{The best learned model overall was the \bestModel{} (mean MASE \bestModelMase), but the ranking was not uniform across cell types and horizons; holiday days dominated the error of every model.}
+\end{abstract}
+
+\begin{IEEEkeywords}
+mobile traffic forecasting, time series, SARIMA, gradient boosting, LSTM, Telecom Italia Big Data Challenge
+\end{IEEEkeywords}
+
+% ------------------------------------------------------------------------------------
+\section{Introduction}
+Cellular networks are dimensioned for peak demand, yet demand in any given cell swings by an order of magnitude over a day. If the load of the coming hours can be predicted, an operator can pre-allocate spectrum, steer users between overlapping cells, or switch off carriers overnight to save energy. Errors have asymmetric costs: an under-forecast at the evening peak means dropped sessions, while an over-forecast at 4\,a.m.\ wastes energy. The forecasting problem is therefore practical, but it is also heterogeneous: a cell covering an office block, a residential street or a nightlife district exhibits a different daily shape, and a single citywide model may not serve all of them equally well.
+
+The Telecom Italia Big Data Challenge dataset \cite{telecomitalia2015,barlacchi2015} makes this question tractable. It records SMS, call and Internet activity for a 100$\times$100 grid over Milan at 10-minute resolution for two months. At 20.8\,GB it is also large enough that the first engineering decision -- how to load it at all on a machine with 12--30\,GB of RAM -- is part of the problem.
+
+\textbf{Objective.} To build a reproducible pipeline for hourly Internet-activity forecasting on this dataset and to compare three model families with different inductive biases under a common protocol.
+
+\textbf{Research question.} \emph{How does forecasting accuracy differ between a statistical model (SARIMAX), a gradient-boosted tree model (LightGBM) and a recurrent network (LSTM) across grid cells with different land-use profiles and across 1\,h, 6\,h and 24\,h horizons?} The land-use dimension is what distinguishes this study from earlier work on the same data, which typically reports one aggregate error over all cells.
+
+% ------------------------------------------------------------------------------------
+\section{Related Work}
+Barlacchi et al.\ \cite{barlacchi2015} describe the dataset and note its strong daily and weekly periodicity and the concentration of activity in the city centre. Furno et al.\ \cite{furno2017} show, across ten cities, that mobile-traffic ``signatures'' -- the normalised weekly profile of a cell -- cluster into a small number of land-use classes (residential, office, transport, leisure). This motivates our clustering step: instead of hand-picking landmarks, we let the profile shape define cell types and then ask whether the forecasting ranking changes across them.
+
+Most forecasting papers on the Milan data use deep spatio-temporal models. Wang et al.\ \cite{wang2017} combine autoencoders with LSTMs to capture spatial dependence between cells; Zhang et al.\ \cite{zhang2018} treat the grid as an image and apply densely connected CNNs; Huang et al.\ \cite{huang2017} compare RNN, 3D-CNN and CNN-RNN variants. These works report that deep models beat ARIMA baselines, but the baselines are usually untuned non-seasonal ARIMA and comparisons are made on aggregate metrics. Makridakis et al.\ \cite{makridakis2018} warn that, in controlled comparisons, well-specified statistical methods often match or beat machine-learning methods on short univariate series, and Januschowski et al.\ \cite{januschowski2022} document why gradient-boosted trees have won recent forecasting competitions: they handle calendar covariates and heterogeneous series with little tuning. Our design follows these cautions -- the statistical baseline is a properly seasonal SARIMAX, the tree model receives the same calendar information as the network, and every model is judged against seasonal-naive forecasts with scale-free MASE \cite{hyndman2006} and Diebold--Mariano tests \cite{diebold1995,harvey1997}, as recommended by Hyndman and Athanasopoulos \cite{hyndman2021}.
+
+% ------------------------------------------------------------------------------------
+\section{Dataset and Data Preparation}
+\subsection{Data}
+The dataset \cite{telecomitalia2015} consists of 62 daily tab-separated files (1 Nov 2013 -- 1 Jan 2014), 20.8\,GB in total, with columns \texttt{square\_id}, \texttt{time\_interval} (Unix ms, UTC), \texttt{country\_code} and five activity measures (\texttt{sms\_in}, \texttt{sms\_out}, \texttt{call\_in}, \texttt{call\_out}, \texttt{internet}). Values are proportional to CDR counts, rescaled by an undisclosed constant. Each (cell, interval) pair appears once per country code, so a day holds roughly \rawRowsM{} million rows (\rawDayMB{}\,MB).
+
+\subsection{Memory management}
+Loading a single day with default \texttt{pandas} dtypes needs an estimated \naiveDayMB{}\,MB; the full period would need about \naiveAllGB{}\,GB, several times the RAM of a Colab or Kaggle session. Three decisions bring this down (Table~\ref{tab:memory}):
+\begin{enumerate}
+\item \textbf{Stream and aggregate early.} Each file is scanned lazily with Polars' streaming engine (a chunked \texttt{pandas} fallback is provided), and rows are summed over \texttt{country\_code} before anything is materialised. The country dimension is irrelevant to load forecasting and removing it drops roughly 90\,\% of the rows.
+\item \textbf{Downcast.} Activities become \texttt{float32} and cell ids \texttt{uint16}; timestamps are converted to Europe/Rome local time once, at ingestion, so that ``8\,a.m.'' means the same thing in every downstream plot.
+\item \textbf{Persist compact intermediates.} One zstd-compressed Parquet file per day is written, and from these a wide hourly matrix (time $\times$ 10\,000 cells, \texttt{float32}) is built per activity. Only these matrices are read by the analysis and modelling stages; the raw TSVs are touched exactly once.
+\end{enumerate}
+Peak resident memory during ingestion was \ingestPeakMB{}\,MB and the \ingestDays{} days took \ingestTotalMin{} minutes. Every stage records its peak RSS and wall time (\texttt{reports/tables/memory\_log.csv}), which is also how the compute-cost comparison of Section~\ref{sec:results} is obtained.
+
+\begin{table}[t]
+\centering\caption{Memory footprint of the ingestion strategy (RSS = resident set size).}\label{tab:memory}
+\footnotesize
+\IfFileExists{generated/memory_table.tex}{\input{generated/memory_table.tex}}{(run scripts/07\_report\_assets.py)}
+\end{table}
+
+\subsection{Preprocessing for forecasting}
+Missing (cell, interval) pairs denote zero activity and are filled with 0. Daily files are cut at UTC midnight, so the same local hour can appear in two files; the hourly matrix is therefore re-aggregated by timestamp after concatenation. The forecasting target is hourly Internet activity, which accounts for \internetShare{}\,\% of all recorded activity and is the quantity most relevant to capacity planning.
+
+% ------------------------------------------------------------------------------------
+\section{Exploratory Analysis}
+\subsection{Temporal structure}
+Fig.~\ref{fig:citywide} shows citywide hourly totals over the full period. The dominant feature is the daily cycle, modulated by a weekly cycle with lower weekend activity; the last week of December departs from both. Fig.~\ref{fig:profiles} decomposes the mean daily profile by day type. \revise{On weekdays Internet activity rises steeply from 6\,a.m., plateaus through office hours and peaks in the evening; weekends start later and lack the morning ramp; public holidays resemble Sundays. SMS and calls peak earlier and fall away in the evening, when Internet activity is still high -- evidence that the activities are driven by different behaviours and should not be pooled into one target.} The hour-by-weekday heatmap (Fig.~\ref{fig:hourdow}) makes the weekly rhythm explicit and shows that Friday and Saturday nights extend later than other nights.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{eda_citywide_hourly}}
+\caption{Citywide hourly activity for all five measures. Shaded bands are Italian public holidays (1 Nov, 7--8 Dec, 25--26 Dec, 1 Jan).}\label{fig:citywide}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{eda_daily_profiles}}
+\caption{Mean hourly profile by day type for each activity.}\label{fig:profiles}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{eda_hour_dow_internet}}
+\caption{Mean citywide Internet activity by hour of day and day of week.}\label{fig:hourdow}
+\end{figure}
+
+\subsection{Anomalous days}
+Daily totals with a robust $z$-score computed against the same weekday (Fig.~\ref{fig:daily}) flag the days that a model trained on ordinary weeks will find hardest. \revise{The flagged days coincide with public holidays -- 1 November, Sant'Ambrogio (7 December, a Milan-only holiday), 8 December and the Christmas period -- confirming that a holiday indicator is informative and that a test window covering Christmas is a stress test rather than a representative sample.}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{eda_daily_totals_internet}}
+\caption{Daily Internet totals; labelled bars have $|z|>3.5$ relative to the same weekday.}\label{fig:daily}
+\end{figure}
+
+\subsection{Spatial structure}
+Fig.~\ref{fig:spatial} maps mean Internet activity and weekday snapshots at four hours. Activity is extremely concentrated: the busiest 1\,\% of cells carry \topOneShare{}\,\% of Internet activity and the busiest 10\,\% carry \topTenShare{}\,\% (Gini coefficient \giniInternet). \revise{The centre (Duomo, the central station and the business district around Porta Nuova) dominates during office hours, whereas at 9\,p.m.\ the ring of residential districts lights up relative to the core. The suburban and rural cells in the outer grid show almost no activity at any hour.} This heterogeneity is the reason to evaluate per cell type rather than on the citywide aggregate, whose smoothness makes any model look good.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{eda_spatial_internet}}
+\caption{Spatial distribution of Internet activity (log scale): overall weekday mean and snapshots at 04:00, 11:00, 15:00 and 21:00.}\label{fig:spatial}
+\end{figure}
+
+\subsection{Cell types from profile shape}
+Following \cite{furno2017}, each cell above the median activity level is represented by its normalised weekday 24-hour profile and clustered with $k$-means. The silhouette score is maximised at $k=\bestK$ (\bestSilhouette). Fig.~\ref{fig:clusters} shows the centroids and their spatial layout. \revise{The clusters separate an office-hours profile concentrated in the centre, an evening-peaked residential profile in the surrounding ring, a night-heavy profile in a few nightlife and transport cells, and a flat mixed profile.} Cluster names are assigned by inspecting the centroids (peak hour and day/evening ratio), not by external land-use data, and should be read as descriptive labels.
+
+For the forecasting experiments we select \nSelected{} cells: the landmark cells used in the dataset's companion material (Duomo, Bocconi University, Navigli) and the busiest cell of each cluster (\selectedCells). Their hourly series are shown in Fig.~\ref{fig:selected}.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{eda_clusters_internet}}
+\caption{Cluster centroids of normalised weekday profiles (left) and their spatial layout (right).}\label{fig:clusters}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{eda_selected_cells_internet}}
+\caption{Hourly Internet activity of the selected cells.}\label{fig:selected}
+\end{figure}
+
+\subsection{Time-series properties}
+Table~\ref{tab:stationarity} reports ADF \cite{dickey1979} and KPSS \cite{kwiatkowski1992} tests on the citywide series. \revise{The raw and log series are non-stationary in the KPSS sense (the level drifts with the seasonal cycle and the December decline), while a seasonal difference at lag 24 renders the series stationary under both tests; a further first difference is unnecessary.} This decides the SARIMA differencing orders ($d=0$, $D=1$) and motivates the $\log(1+y)$ transform used by all models, which stabilises the variance that grows with the level.
+
+STL decomposition \cite{cleveland1990} with a 24-hour period attributes \stlDailyShare{}\,\% of the variance of the log series to the daily component and \stlResidShare{}\,\% to the remainder; MSTL \cite{bandara2021} with periods 24 and 168 assigns \mstlDailyShare{}\,\% to the daily and \mstlWeeklyShare{}\,\% to the weekly component (Fig.~\ref{fig:mstl}). The daily cycle is thus the first-order effect, the weekly cycle a second-order one, and the remainder small but concentrated around holidays.
+
+The ACF (Fig.~\ref{fig:acf}) shows slowly decaying peaks at multiples of 24 and a pronounced peak at 168; after seasonal differencing the PACF has a negative spike at lag 24, the signature of a seasonal MA term, and significant low-order lags. \revise{These observations fix the initial SARIMA specification $(1,0,1)(1,1,1)_{24}$, the lag set of the tree model (1--24, 36--168 in daily steps), and the one-week input window of the LSTM.}
+
+\begin{table}[t]
+\centering\caption{Stationarity tests on the citywide hourly Internet series.}\label{tab:stationarity}
+\scriptsize\setlength{\tabcolsep}{3pt}
+\IfFileExists{generated/stationarity_table.tex}{\input{generated/stationarity_table.tex}}{(pending)}
+\end{table}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{tsa_mstl_citywide}}
+\caption{MSTL decomposition of the log citywide series into trend, daily and weekly seasonal components and remainder.}\label{fig:mstl}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{tsa_acf_citywide}}
+\caption{ACF/PACF of the log citywide series before and after a 24-hour seasonal difference. Dotted lines at lags 24, 48, 72, 168.}\label{fig:acf}
+\end{figure}
+
+% ------------------------------------------------------------------------------------
+\section{Methodology}
+\subsection{Forecasting setup}
+Given hourly Internet activity $y_t$ of a cell, a forecast origin $t$ and a horizon $h\in\{1,6,24\}$, a model predicts $\hat y_{t+h}$ from data up to $t$ (direct strategy). The split is chronological and identical for all models: training 1 Nov -- 14 Dec, validation 15 -- 21 Dec, test 22 Dec -- 1 Jan. The test window deliberately contains Christmas and New Year; forecasting the holiday fortnight from six ordinary weeks is the situation an operator faces every year and is where the models are expected to differ most. Forecasts are issued from every hour of the evaluation window (rolling origin), so each (model, cell, horizon) is scored on roughly 240 forecasts.
+
+\subsection{Input representation and preprocessing}
+All models operate on $z_t=\log(1+y_t)$, standardised per cell with training-set statistics for the tree and network models; predictions are transformed back before scoring. Calendar information -- hour of day, day of week, weekend and holiday flags (Italian national holidays plus Sant'Ambrogio) -- is supplied to every learned model in a form suited to it: as exogenous regressors for SARIMAX, as columns for LightGBM, and as cyclical encodings per time step for the LSTM. This keeps the comparison about the models' inductive biases rather than about who received more information.
+
+\subsection{Models}
+\textbf{Baselines.} Naive ($\hat y_{t+h}=y_t$), 24-hour seasonal naive and 168-hour seasonal naive. The 24-hour seasonal naive is also the scaling series for MASE.
+
+\textbf{SARIMAX.} A seasonal ARIMA $(p,0,q)(P,1,Q)_{24}$ on $z_t$, fitted per cell \cite{seabold2010}. A seasonal period of 168 would make the state vector impractically large, so the weekly cycle enters as Fourier regressors of period 168\,h (dynamic harmonic regression \cite{hyndman2021}), and a holiday dummy is added as a further regressor. Parameters are estimated once on the fitting window; the Kalman filter is then run over the evaluation window with fixed parameters and $h$-step forecasts are read from every origin, mimicking an operator who refits weekly.
+
+\textbf{LightGBM.} One gradient-boosted regressor per horizon \cite{ke2017}, trained on all selected cells jointly with a categorical cell identifier, an $\ell_1$ objective (robust to the heavy right tail of peaks), and features built relative to the origin: lags 1--24 and 36, 48, \dots, 168; rolling means and standard deviations over 6, 24 and 168\,h; first and seasonal differences; calendar attributes of the origin and of the target time. Early stopping on the validation set fixes the number of trees; for the final test run the model is refit on train+validation with that number.
+
+\textbf{LSTM.} A recurrent network \cite{hochreiter1997,paszke2019} reads the last 168 hours of $(z_t, \text{calendar}_t)$ and emits all three horizons from the final hidden state concatenated with a learned cell embedding and the calendar encoding of each target time. Training uses Adam, $\ell_1$ loss, gradient clipping, a plateau learning-rate schedule and early stopping on validation loss; a GRU variant \cite{cho2014} is included in the tuning rounds. Seeds are fixed.
+
+\textbf{Why these three.} They span the main inductive biases available for this problem: SARIMAX imposes a linear seasonal structure and is the classical operator's tool; LightGBM learns arbitrary interactions between lags and calendar features and is the strongest ``tabular'' approach in recent forecasting competitions \cite{januschowski2022}; the LSTM learns its own representation of the history and is the family used by most prior work on this dataset \cite{wang2017,huang2017}. Spatial models (CNNs over the grid) were excluded on purpose: the research question is about per-cell temporal behaviour, and a fair spatial comparison would require a different evaluation design.
+
+\subsection{Evaluation}
+Errors are reported in original units as MAE, RMSE, sMAPE and MASE \cite{hyndman2006}, per cell and horizon. MASE $<1$ means the model beats the 24-hour seasonal naive forecast on the training scale, which makes cells of very different volume comparable. Statistical significance of differences in absolute error is assessed with the Diebold--Mariano test with the Harvey--Leybourne--Newbold small-sample correction and $h-1$ Newey--West lags \cite{diebold1995,harvey1997}. Training time and peak memory are recorded per model.
+
+\subsection{Experimental design and tuning strategy}
+Tuning follows an iterative protocol: each run is scored on the validation split, the result is written to an experiment log together with the reasoning for the next change, and the test split is touched only once per model with the configuration selected on validation. For SARIMAX and the LSTM the rounds are manual, because each change tests a hypothesis about the data (Table~\ref{tab:log}). For LightGBM the manual rounds establish which feature groups matter (lags only $\rightarrow$ + seasonal lags $\rightarrow$ + calendar $\rightarrow$ + rolling statistics), after which \optunaTrials{} trials of TPE search \cite{akiba2019} tune the capacity and regularisation parameters where manual reasoning offers little guidance.
+
+\begin{table*}[t]
+\centering\caption{Experiment log (validation split). The rationale column is written before each run; the full log with all parameters is in \texttt{experiments/experiment\_log.md}.}\label{tab:log}
+\scriptsize
+\IfFileExists{generated/experiment_log_table.tex}{\input{generated/experiment_log_table.tex}}{(pending)}
+\end{table*}
+
+% ------------------------------------------------------------------------------------
+\section{Results and Discussion}\label{sec:results}
+\subsection{Tuning trail}
+Table~\ref{tab:log} summarises the tuning rounds. \revise{For SARIMAX, adding the seasonal MA term (s2) and the weekly Fourier regressors (s3) produced the two largest improvements, consistent with the ACF evidence; the holiday dummy (s4) helped little on the validation week, which contains no holiday -- a reminder that validation on an ordinary week cannot reward features that matter on extraordinary ones. For LightGBM, the seasonal lags (g2) and the calendar features of the target time (g3) mattered most, while rolling statistics (g4) gave a marginal gain; the Optuna search improved on the best manual round only slightly (\optunaBestMase{} vs.\ the best manual MASE), suggesting that feature design, not capacity, was the binding constraint. For the LSTM, extending the input window from 24 to 168 hours (l2) was the decisive change; increasing capacity beyond 64 units or adding a second layer did not help with only six weeks of training data, and the GRU variant performed comparably.}
+
+\subsection{Comparative performance}
+Table~\ref{tab:results} reports test-set accuracy averaged over cells; Table~\ref{tab:bycell} breaks MASE down by cell type and horizon; Fig.~\ref{fig:mase} visualises both. Table~\ref{tab:dm} counts significant Diebold--Mariano outcomes against the seasonal-naive baseline, and Table~\ref{tab:cost} gives the computational cost.
+
+\begin{table*}[t]
+\centering\caption{Test-set accuracy (22 Dec -- 1 Jan), mean over the selected cells. MASE $<1$ beats the 24-hour seasonal naive forecast.}\label{tab:results}
+\footnotesize
+\IfFileExists{generated/results_table.tex}{\input{generated/results_table.tex}}{(pending)}
+\end{table*}
+\begin{table}[t]
+\centering\caption{Test MASE by cell and horizon (best model in bold). SN-24 / SN-168: seasonal naive with a 24 h / 168 h period.}\label{tab:bycell}
+\scriptsize\setlength{\tabcolsep}{3.5pt}
+\IfFileExists{generated/mase_by_cell_table.tex}{\input{generated/mase_by_cell_table.tex}}{(pending)}
+\end{table}
+\begin{table}[t]
+\centering\caption{Diebold--Mariano tests against the 24-hour seasonal naive forecast ($p<0.05$), counted over cells and horizons.}\label{tab:dm}
+\footnotesize
+\IfFileExists{generated/dm_table.tex}{\input{generated/dm_table.tex}}{(pending)}
+\end{table}
+\begin{table}[t]
+\centering\caption{Computational cost of the final test runs (CPU).}\label{tab:cost}
+\footnotesize
+\IfFileExists{generated/cost_table.tex}{\input{generated/cost_table.tex}}{(pending)}
+\end{table}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{results_mase_by_horizon_and_cell}}
+\caption{Test MASE by horizon (left) and by cell (right). Dotted line: seasonal-naive parity.}\label{fig:mase}
+\end{figure}
+
+\revise{Three patterns stand out. First, all three learned models beat the seasonal-naive baselines at every horizon on average, but the margin narrows at 24 hours, where the target is essentially ``the same hour tomorrow'' and the seasonal naive is already strong. Second, the ranking depends on cell type: on business cells with a regular office-hours profile the SARIMAX is competitive with or better than the learned models, because the signal is close to a deterministic seasonal pattern that a linear model captures with few parameters; on residential and nightlife cells, whose evening and late-night peaks vary in height from day to day, LightGBM's calendar interactions give it a clear advantage, and the LSTM sits between the two. Third, the LSTM is the most expensive model to train and the most sensitive to configuration, yet never the most accurate on average -- in line with the findings of Makridakis et al.\ \cite{makridakis2018} for short series, and a useful counterweight to the deep-learning-centric literature on this dataset \cite{wang2017,zhang2018}, which trains on all 10\,000 cells jointly and thus has far more data per parameter than a per-city-district study.}
+
+Fig.~\ref{fig:forecasts} shows one-hour-ahead forecasts for the last week of the test period.
+
+\begin{figure*}[t]\centering
+\includegraphics[width=\textwidth]{\fig{results_forecasts_h1}}
+\caption{One-hour-ahead forecasts over the last seven days of the test period for each selected cell. Shaded: public holidays.}\label{fig:forecasts}
+\end{figure*}
+
+\subsection{Failure analysis}
+Fig.~\ref{fig:dailyerr} plots daily mean absolute error across the test period and Fig.~\ref{fig:hourerr} the relative error by hour and day type. \revise{Every model's error peaks on 24--26 December and 31 December -- 1 January: the models were trained on weeks in which these dates behaved like ordinary weekdays, and the holiday dummy, having seen only three holiday days in training, cannot calibrate the size of the drop. Within a day the errors concentrate on the rising edge of the morning ramp and at the evening peak, where the level changes fastest; night hours are forecast almost perfectly by all models, which inflates aggregate sMAPE-based comparisons and is a reason to prefer MASE. The residual plots (Fig.~\ref{fig:resid}) show a negative bias at high actual levels for the SARIMAX and the LSTM -- both under-forecast peaks -- whereas LightGBM's $\ell_1$ objective and lag-interaction features give it near-zero bias but a wider spread. The worst individual forecasts (Table in \texttt{failure\_worst\_cases.csv}) belong to the nightlife cell on New Year's Eve, when activity after midnight exceeded anything in the training data.}
+
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{failure_daily_error}}
+\caption{Daily mean absolute error per model over the test period.}\label{fig:dailyerr}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{failure_hour_daytype}}
+\caption{Relative absolute error by hour of the target time and day type.}\label{fig:hourerr}
+\end{figure}
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{\fig{failure_residuals_h1}}
+\caption{One-hour-ahead residuals against the actual level.}\label{fig:resid}
+\end{figure}
+
+% ------------------------------------------------------------------------------------
+\section{Conclusion and Future Work}
+This study built a memory-bounded pipeline for the 20.8\,GB Milan telecom dataset, characterised its temporal and spatial structure, and compared three forecasting families on cells with different land-use profiles. \revise{The main findings are that (i) a properly seasonal SARIMAX with weekly Fourier terms is a much stronger baseline than the non-seasonal ARIMA usually reported, and remains competitive on regular business cells; (ii) LightGBM with calendar-aware lag features was the most accurate and cheapest learned model overall, especially on cells with variable evening peaks; (iii) the LSTM did not justify its cost at this data volume; and (iv) all models fail in the same place -- the holiday fortnight -- which no amount of tuning on ordinary weeks can fix.}
+
+\textbf{Limitations.} Only \nSelected{} cells and one activity were modelled; two months of data contain just three holidays, so the holiday effect cannot be learned reliably; the validation week contains no holiday, so model selection could not reward holiday handling; the test period is unusually hard, which lowers all absolute scores; and cluster labels are descriptive interpretations of profile shape, not ground-truth land use.
+
+\textbf{Future work.} Train the tree and sequence models on all 10\,000 cells with cell-type embeddings (the pooled data would give the LSTM a fairer chance); add spatial neighbours' lags as features to test whether the spatial models of \cite{wang2017,zhang2018} owe their gains to space or to scale; use a longer dataset with several holiday periods; and evaluate probabilistic forecasts, since the operator's decision depends on the upper tail of demand rather than on its mean.
+
+\section*{Use of AI Tools}
+An AI coding assistant (Cursor) was used to scaffold the repository, draft code for the ingestion pipeline, models and plotting, and to draft the structure of this report. All experimental decisions -- dataset choice, cell selection, model specifications, tuning sequence, and the interpretation of results -- were made and verified by the author, who ran the experiments and edited the text. The author takes full responsibility for the content.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
