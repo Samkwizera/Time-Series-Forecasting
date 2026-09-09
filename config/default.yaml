@@ -1,17 +1,19 @@
-# Central configuration for the Milan traffic forecasting project.
-# Every script reads this file; override values with --config or environment variable MILAN_CONFIG.
+# Central config; every script reads this. Override with --config or MILAN_CONFIG.
 
 paths:
-  raw_dir: data/raw                 # 62 daily TSV files from Harvard Dataverse
-  interim_dir: data/interim         # per-day aggregated Parquet (country codes summed)
-  processed_dir: data/processed     # wide hourly tensors used for EDA and modelling
+  # the 62 daily TSV files from Harvard Dataverse
+  raw_dir: data/raw
+  # per-day Parquet with country codes summed away
+  interim_dir: data/interim
+  # hourly (time x cell) matrices used for EDA and modelling
+  processed_dir: data/processed
   figures_dir: reports/figures
   tables_dir: reports/tables
   experiments_dir: experiments
   models_dir: models
 
 data:
-  # Schema of the raw TSV files (no header row). Column order is fixed by the data provider.
+  # column order is fixed by the provider; the files have no header row
   raw_columns: [square_id, time_interval, country_code, sms_in, sms_out, call_in, call_out, internet]
   activities: [sms_in, sms_out, call_in, call_out, internet]
   n_cells: 10000
@@ -19,15 +21,18 @@ data:
   interval_minutes: 10
   timezone: Europe/Rome
   start_date: "2013-11-01"
-  end_date: "2014-01-01"          # inclusive; 62 daily files
-  # Set to a small integer while developing to ingest only the first N daily files.
+  # inclusive
+  end_date: "2014-01-01"
+  # set to a small number while developing to only ingest the first N days
   max_days: null
-  chunk_rows: 2_000_000           # rows per chunk when streaming a TSV with pandas
+  # rows per chunk for the pandas fallback engine
+  chunk_rows: 2_000_000
 
 eda:
   hourly_freq: "1h"
-  n_clusters: 4                   # k-means on normalised 24h profiles (business / residential / nightlife / mixed)
-  # Landmark cells used in prior work on this dataset (Barlacchi et al. 2015 companion notebooks).
+  # k-means on normalised 24h profiles; 4 tends to give business / residential / nightlife / mixed
+  n_clusters: 4
+  # well-known cells from the Barlacchi et al. companion notebooks
   landmarks:
     duomo: 5060
     bocconi: 4259
@@ -36,10 +41,13 @@ eda:
 
 forecast:
   target_activity: internet
-  input_window: 168               # hours of history fed to the models (one week)
-  horizons: [1, 6, 24]            # hours ahead
+  # one week of history
+  input_window: 168
+  # hours ahead
+  horizons: [1, 6, 24]
   split:
     train_end: "2013-12-14 23:00"
-    val_end: "2013-12-21 23:00"   # test = 2013-12-22 .. 2014-01-01 (holiday period, deliberately hard)
+    # test = 22 Dec .. 1 Jan, i.e. the holiday period; hard on purpose
+    val_end: "2013-12-21 23:00"
   transform: log1p
   seed: 42

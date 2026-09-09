@@ -1,5 +1,5 @@
-# Small configuration for end-to-end smoke tests on synthetic data (20x20 grid, 28 days).
-# Usage: MILAN_CONFIG=config/smoke.yaml python scripts/01_ingest.py --synthetic-days 28
+# Tiny synthetic setup (20x20 grid, 28 days) so the whole pipeline runs in under a minute.
+# MILAN_CONFIG=config/smoke.yaml python scripts/01_ingest.py --synthetic-days 28
 
 paths:
   raw_dir: data/smoke/raw

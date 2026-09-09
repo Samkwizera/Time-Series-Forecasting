@@ -155,7 +155,6 @@ def spatial_maps(hourly: pd.DataFrame, cfg: Config, activity: str) -> pd.DataFra
     fig.suptitle(f"Spatial distribution of {activity} activity over the {side}x{side} grid (north up)", y=1.02)
     save(fig, cfg.paths.figures_dir, f"eda_spatial_{activity}")
 
-    # Concentration of traffic across cells
     sorted_share = np.sort(mean_map.to_numpy())[::-1].cumsum() / mean_map.sum()
     n = len(sorted_share)
     conc = pd.DataFrame({
@@ -190,10 +189,11 @@ def normalised_profiles(hourly: pd.DataFrame, min_mean: float | None = None) -> 
     """Weekday 24-h profile of each cell, scaled to sum 1 so shape is compared, not volume."""
     flags = calendar_flags(hourly.index)
     weekday = hourly[flags["day_type"].to_numpy() == "weekday"]
-    prof = weekday.groupby(weekday.index.hour).mean().T  # cells x 24
+    prof = weekday.groupby(weekday.index.hour).mean().T
     mean_level = hourly.mean()
+    # the quiet outer half of the grid is mostly noise and would swamp the clustering
     if min_mean is None:
-        min_mean = mean_level.quantile(0.5)  # ignore the quiet outer half of the grid
+        min_mean = mean_level.quantile(0.5)
     keep = mean_level[mean_level >= min_mean].index
     prof = prof.loc[keep]
     prof = prof.div(prof.sum(axis=1), axis=0).fillna(0)
@@ -218,7 +218,7 @@ def _name_clusters(centroids: pd.DataFrame) -> dict[int, str]:
             names[k] = "residential"
         else:
             names[k] = "mixed/suburban"
-    # Ensure names are unique by appending an index when the heuristic collides.
+    # two clusters can land on the same label; suffix the duplicates
     seen: dict[str, int] = {}
     for k in list(names):
         base = names[k]

@@ -43,7 +43,8 @@ def stationarity_tests(series: pd.Series, name: str) -> list[dict]:
         adf_stat, adf_p, *_ = adfuller(s, autolag="AIC")
         try:
             kpss_stat, kpss_p, *_ = kpss(s, regression="c", nlags="auto")
-        except Exception:  # noqa: BLE001 - KPSS warns/fails on extreme cases
+        # KPSS can blow up on near-constant series; report NaN rather than abort the table
+        except Exception:  # noqa: BLE001
             kpss_stat, kpss_p = np.nan, np.nan
         verdict = ("stationary" if adf_p < 0.05 and kpss_p > 0.05 else
                    "non-stationary" if adf_p >= 0.05 and kpss_p <= 0.05 else "inconclusive")
@@ -64,7 +65,8 @@ def decomposition(series: pd.Series, cfg: Config, name: str) -> dict:
 
     out = {"series": name, "stl24_trend_var": stl.trend.var(), "stl24_seasonal_var": stl.seasonal.var(),
            "stl24_resid_var": stl.resid.var()}
-    if len(y) >= 3 * 168:  # MSTL silently drops a period without enough cycles
+    # MSTL silently drops the 168h period when there are too few weeks
+    if len(y) >= 3 * 168:
         mstl = MSTL(y, periods=(24, 168), stl_kwargs={"robust": True}).fit()
         fig = mstl.plot()
         fig.set_size_inches(10, 8)

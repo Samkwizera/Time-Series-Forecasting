@@ -19,7 +19,8 @@ import pandas as pd
 
 from .config import Config
 
-COUNTRY_CODES = [39, 33, 44, 49, 0]  # Italy dominates; a few foreign codes plus "unknown"
+# Italy dominates, plus a few foreign codes and the "unknown" 0 code seen in the real files
+COUNTRY_CODES = [39, 33, 44, 49, 0]
 
 
 def _cell_profiles(grid_side: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
@@ -28,20 +29,25 @@ def _cell_profiles(grid_side: int, rng: np.random.Generator) -> tuple[np.ndarray
     centre = (grid_side - 1) / 2
     dist = np.hypot(xs - centre, ys - centre) / (grid_side / 2)
     base = 400 * np.exp(-3 * dist**2) + 5 + rng.gamma(1.0, 3.0, size=dist.size)
-    cell_type = np.where(dist < 0.25, 0, np.where(dist < 0.6, 1, 2))  # business, residential, suburban
+    # 0 = business core, 1 = residential ring, 2 = suburbs, 3 = scattered nightlife spots
+    cell_type = np.where(dist < 0.25, 0, np.where(dist < 0.6, 1, 2))
     nightlife = rng.choice(dist.size, size=max(1, dist.size // 50), replace=False)
     cell_type[nightlife] = 3
     return base.astype(np.float32), cell_type
 
 
 def _daily_shape(hours: np.ndarray, cell_type: int) -> np.ndarray:
-    if cell_type == 0:    # business: peaks 10h-17h
+    # business: office hours peak
+    if cell_type == 0:
         return 0.2 + 0.8 * np.exp(-((hours - 13.5) / 3.2) ** 2)
-    if cell_type == 1:    # residential: morning bump and evening peak
+    # residential: small morning bump, big evening peak
+    if cell_type == 1:
         return 0.25 + 0.35 * np.exp(-((hours - 8) / 1.5) ** 2) + 0.75 * np.exp(-((hours - 20.5) / 2.5) ** 2)
-    if cell_type == 3:    # nightlife: late evening
+    # nightlife: peak wraps around midnight
+    if cell_type == 3:
         return 0.15 + 0.9 * np.exp(-((((hours + 2) % 24) - 1.5) / 2.0) ** 2)
-    return 0.3 + 0.5 * np.exp(-((hours - 12) / 4.0) ** 2)  # suburban: flat
+    # suburban: flat-ish
+    return 0.3 + 0.5 * np.exp(-((hours - 12) / 4.0) ** 2)
 
 
 def write_synthetic_raw(cfg: Config, n_days: int = 5, seed: int = 0) -> list[Path]:
@@ -63,8 +69,8 @@ def write_synthetic_raw(cfg: Config, n_days: int = 5, seed: int = 0) -> list[Pat
         epoch_ms = (times.tz_convert("UTC").tz_localize(None) - pd.Timestamp("1970-01-01")) // pd.Timedelta("1ms")
         hours = (times.hour + times.minute / 60).to_numpy()
         weekend = day_start.dayofweek >= 5
-        shapes = np.stack([_daily_shape(hours, t) for t in range(4)])          # 4 x T
-        level = shapes[cell_type] * base[:, None]                                # cells x T
+        shapes = np.stack([_daily_shape(hours, t) for t in range(4)])
+        level = shapes[cell_type] * base[:, None]
         if weekend:
             level *= np.where(cell_type == 0, 0.45, 0.9)[:, None]
         noise = rng.gamma(shape=20.0, scale=1 / 20.0, size=level.shape)
@@ -82,8 +88,8 @@ def write_synthetic_raw(cfg: Config, n_days: int = 5, seed: int = 0) -> list[Pat
                 "call_out": (part * 0.09).ravel(),
                 "internet": part.ravel(),
             })
-            # Sparse rows for minor country codes mirror the real files, where most
-            # (cell, interval, code) triples are simply absent.
+            # real files only have rows for foreign codes where there was actual traffic,
+            # so thin them out instead of emitting a full grid per code
             if code != 39:
                 frame = frame.sample(frac=0.15, random_state=int(rng.integers(1 << 31)))
             frames.append(frame)

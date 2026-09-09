@@ -84,7 +84,7 @@ def aggregate_day_pandas(path: Path, cfg: Config, sample=None) -> pd.DataFrame:
         partial.append(chunk.groupby(KEY_COLUMNS, sort=False)[acts].sum())
         if sample:
             sample()
-    # Chunk boundaries can split a (cell, interval) group, so reduce once more.
+    # a (cell, interval) group can straddle two chunks, hence the second groupby
     df = pd.concat(partial).groupby(level=KEY_COLUMNS).sum().reset_index()
     return _finalise_day(df, cfg)
 
@@ -170,7 +170,7 @@ def build_wide(cfg: Config, activity: str, freq: str | None = None) -> pd.DataFr
             wide = wide.resample(freq).sum().astype(np.float32)
         blocks.append(wide)
     out = pd.concat(blocks).sort_index()
-    # Daily files are cut in UTC, so a local-time hour can straddle two files.
+    # files are cut at UTC midnight, so the same local hour can show up in two files
     out = out.groupby(level=0).sum().astype(np.float32)
     out.columns.name = "square_id"
     return out
@@ -190,7 +190,7 @@ def build_processed(cfg: Config, force: bool = False) -> dict[str, Path]:
             wide = build_wide(cfg, activity, freq=cfg.eda.hourly_freq)
             wide.columns = wide.columns.astype(str)
             wide.to_parquet(hourly_path, compression="zstd")
-    # 10-minute citywide totals keep the fine resolution for EDA without the 10k-cell width.
+    # keep a 10-min citywide series for EDA; the full 10k-cell width at that resolution is too big
     city_path = paths.processed_dir / "citywide_10min.parquet"
     outputs["citywide_10min"] = city_path
     if not city_path.exists() or force:
