@@ -1,5 +1,5 @@
-# Small configuration for end-to-end smoke tests on synthetic data (20x20 grid, 14 days).
-# Usage: MILAN_CONFIG=config/smoke.yaml python scripts/01_ingest.py --synthetic-days 14
+# Small configuration for end-to-end smoke tests on synthetic data (20x20 grid, 28 days).
+# Usage: MILAN_CONFIG=config/smoke.yaml python scripts/01_ingest.py --synthetic-days 28
 
 paths:
   raw_dir: data/smoke/raw
@@ -18,7 +18,7 @@ data:
   interval_minutes: 10
   timezone: Europe/Rome
   start_date: "2013-11-01"
-  end_date: "2013-11-14"
+  end_date: "2013-11-28"
   max_days: null
   chunk_rows: 200_000
 
@@ -34,7 +34,7 @@ forecast:
   input_window: 72
   horizons: [1, 6, 24]
   split:
-    train_end: "2013-11-09 23:00"
-    val_end: "2013-11-11 23:00"
+    train_end: "2013-11-21 23:00"
+    val_end: "2013-11-24 23:00"
   transform: log1p
   seed: 42

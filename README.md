@@ -66,7 +66,7 @@ documented below as they are added.
 ### Smoke test without the real data
 
 ```bash
-MILAN_CONFIG=config/smoke.yaml python scripts/01_ingest.py --synthetic-days 14
+MILAN_CONFIG=config/smoke.yaml python scripts/01_ingest.py --synthetic-days 28
 ```
 
 ## Pushing to GitHub
