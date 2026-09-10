@@ -32,7 +32,13 @@ def main() -> None:
     activity = cfg.forecast.target_activity
 
     with track("eda", paths.tables_dir / "memory_log.csv"):
-        city = pd.read_parquet(paths.processed_dir / "citywide_10min.parquet")
+        city_path = paths.processed_dir / "citywide_10min.parquet"
+        if not city_path.exists():
+            raise FileNotFoundError(
+                f"{city_path} is missing. Stage 1 (scripts/01_ingest.py) has to finish first; "
+                "EDA cannot run on the raw TSV files."
+            )
+        city = pd.read_parquet(city_path)
         hourly = load_hourly(cfg, activity)
 
         eda.plot_citywide_series(city, cfg)

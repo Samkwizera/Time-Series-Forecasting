@@ -32,7 +32,12 @@ def main() -> None:
     warnings.filterwarnings("ignore", category=UserWarning)
     cfg = load_config(args.config)
     paths = cfg.paths.ensure()
-    with open(paths.tables_dir / "selected_cells.json") as fh:
+    selected_path = paths.tables_dir / "selected_cells.json"
+    if not selected_path.exists():
+        raise FileNotFoundError(
+            f"{selected_path} is missing. Run scripts/02_eda.py first (it writes this file)."
+        )
+    with open(selected_path) as fh:
         selected = json.load(fh)["cells"]
     with track("tsa", paths.tables_dir / "memory_log.csv"):
         city = pd.read_parquet(paths.processed_dir / "citywide_10min.parquet")

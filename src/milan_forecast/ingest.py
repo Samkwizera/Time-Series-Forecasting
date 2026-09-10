@@ -204,7 +204,13 @@ def build_processed(cfg: Config, force: bool = False) -> dict[str, Path]:
 
 def load_hourly(cfg: Config, activity: str | None = None) -> pd.DataFrame:
     activity = activity or cfg.forecast.target_activity
-    df = pd.read_parquet(cfg.paths.processed_dir / f"hourly_{activity}.parquet")
+    path = cfg.paths.processed_dir / f"hourly_{activity}.parquet"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} is missing. Ingest has not finished: run `python scripts/01_ingest.py` "
+            "and wait until it prints the hourly_*.parquet paths before starting EDA."
+        )
+    df = pd.read_parquet(path)
     df.columns = df.columns.astype(int)
     df.columns.name = "square_id"
     return df
