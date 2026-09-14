@@ -1,0 +1,13 @@
+{
+  "hidden_size": 64,
+  "num_layers": 1,
+  "dropout": 0.0,
+  "lr": 0.001,
+  "weight_decay": 0.0,
+  "input_window": 168,
+  "batch_size": 128,
+  "max_epochs": 80,
+  "patience": 10,
+  "embedding_dim": 4,
+  "clip_norm": 1.0
+}

@@ -23,8 +23,9 @@ import pandas as pd  # noqa: E402
 from milan_forecast.config import PROJECT_ROOT, load_config  # noqa: E402
 
 OUT = PROJECT_ROOT / "report" / "generated"
-MODEL_NAMES = {"naive": "Naive", "seasonal_naive": "Seasonal naive (24 h)", "weekly_naive": "Seasonal naive (168 h)",
-               "sarima": "SARIMAX", "lightgbm": "LightGBM", "lstm": "LSTM", "gru": "GRU"}
+MODEL_NAMES = {"baselines": "Baselines", "naive": "Naive", "seasonal_naive": "Seasonal naive (24 h)",
+               "weekly_naive": "Seasonal naive (168 h)", "sarima": "SARIMAX", "lightgbm": "LightGBM",
+               "lstm": "LSTM", "gru": "GRU"}
 
 
 HORIZON_WORDS = {"1": "One", "6": "Six", "24": "Day"}
@@ -87,6 +88,11 @@ Model & MASE & sMAPE & MASE & sMAPE & MASE & sMAPE & MASE & sMAPE & MAE \\
         best = learned.sort_values("mase").iloc[0]
         macros.append(f"\\newcommand{{\\bestModel}}{{{MODEL_NAMES[best['model']]}}}")
         macros.append(f"\\newcommand{{\\bestModelMase}}{{{fmt(best['mase'], 3)}}}")
+    overall = df[df["horizon"] == "all"]
+    if len(overall):
+        best = overall.sort_values("mase").iloc[0]
+        macros.append(f"\\newcommand{{\\bestOverallModel}}{{{MODEL_NAMES[best['model']]}}}")
+        macros.append(f"\\newcommand{{\\bestOverallMase}}{{{fmt(best['mase'], 3)}}}")
 
 
 def mase_by_cell_table(tables: Path) -> None:
@@ -154,10 +160,12 @@ def memory_table(tables: Path, macros: list[str]) -> None:
         macros.append(f"\\newcommand{{\\ingestPeakMB}}{{{fmt(ingest['rss_peak_mb'].max(), 0)}}}")
         macros.append(f"\\newcommand{{\\ingestTotalMin}}{{{fmt(ingest['seconds'].sum() / 60, 1)}}}")
         macros.append(f"\\newcommand{{\\ingestDays}}{{{len(ingest)}}}")
-    for stage in ["wide_hourly:internet", "eda", "tsa"]:
+    for stage in ["wide_hourly:internet", "citywide_10min", "eda", "tsa"]:
         s = mem[mem["stage"] == stage]
         if len(s):
             rows.append(f"{stage.replace('_', ' ').replace(':', ' ')} & {fmt(s['rss_peak_mb'].max(), 0)} & {fmt(s['seconds'].max(), 1)} \\\\")
+    if len(mem):
+        macros.append(f"\\newcommand{{\\pipelinePeakMB}}{{{fmt(mem['rss_peak_mb'].max(), 0)}}}")
     write("memory_table.tex", "\\begin{tabular}{p{4.6cm} rr}\n\\toprule\nStage & RSS (MB) & Time (s) \\\\\n\\midrule\n"
           + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n")
 
@@ -210,6 +218,12 @@ def eda_macros(tables: Path, macros: list[str]) -> None:
         s = pd.read_csv(sil).set_index("k")["silhouette"]
         macros.append(f"\\newcommand{{\\bestK}}{{{int(s.idxmax())}}}")
         macros.append(f"\\newcommand{{\\bestSilhouette}}{{{s.max():.2f}}}")
+        clusters = tables / "cell_clusters.csv"
+        if clusters.exists():
+            chosen_k = pd.read_csv(clusters)["cluster"].nunique()
+            macros.append(f"\\newcommand{{\\chosenK}}{{{chosen_k}}}")
+            if chosen_k in s.index:
+                macros.append(f"\\newcommand{{\\chosenSilhouette}}{{{s.loc[chosen_k]:.2f}}}")
 
 
 def experiment_log_table(cfg, macros: list[str]) -> None:
@@ -228,11 +242,13 @@ def experiment_log_table(cfg, macros: list[str]) -> None:
             note = r["note"].replace("&", "\\&").replace("%", "\\%").replace("_", "\\_")
             if len(note) > 110:
                 note = note[:107] + "..."
-            rows.append(f"{MODEL_NAMES[model]} & {r['run_id'].removesuffix('_val')} & {fmt(r['metrics']['mase'], 3)} & "
+            family_name = "RNN" if model == "lstm" else MODEL_NAMES[model]
+            rows.append(f"{family_name} & {r['run_id'].removesuffix('_val')} & {fmt(r['metrics']['mase'], 3)} & "
                         f"{fmt(r['metrics']['smape'], 1)} & {fmt(r['train_seconds'], 0)} & {note} \\\\")
         if optuna:
             best = min(optuna, key=lambda r: r["metrics"]["mase"])
-            rows.append(f"{MODEL_NAMES[model]} & Optuna ({len(optuna)} trials) & {fmt(best['metrics']['mase'], 3)} & "
+            family_name = "RNN" if model == "lstm" else MODEL_NAMES[model]
+            rows.append(f"{family_name} & Optuna ({len(optuna)} trials) & {fmt(best['metrics']['mase'], 3)} & "
                         f"{fmt(best['metrics']['smape'], 1)} & {fmt(sum(r['train_seconds'] for r in optuna), 0)} & "
                         f"best trial {best['run_id'].removesuffix('_val')}: " +
                         ", ".join(f"{k}={v:.3g}" if isinstance(v, float) else f"{k}={v}" for k, v in best["params"].items()

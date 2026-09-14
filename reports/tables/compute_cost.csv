@@ -1,0 +1,9 @@
+model,part,seconds,peak_rss_mb,runs
+baselines,test,0.06,1048.5,1
+baselines,val,0.06,1055.9,1
+gru,test,11.99,1710.1,1
+lightgbm,test,9.12,1058.2,1
+lightgbm,val,9.379999999999999,1098.3,26
+lstm,val,7.215,1808.7,6
+sarima,test,59.47,1052.1,1
+sarima,val,108.02,1052.2,5

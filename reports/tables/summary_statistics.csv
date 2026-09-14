@@ -1,0 +1,10 @@
+,total,share_pct
+sms_in,405315420.0,6.0011053
+sms_out,219879580.0,3.2555401
+call_in,267624060.0,3.9624453
+call_out,308299500.0,4.5646863
+internet,5552894000.0,82.216225
+cells_nonzero_target,10000.0,
+cell_mean_cv,0.3609249,
+n_hours,1488.0,
+n_missing_hours,0.0,

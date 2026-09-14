@@ -1,0 +1,84 @@
+{
+ "model": "lightgbm",
+ "run_id": "g3_val",
+ "timestamp": "2026-09-12T19:35:48+00:00",
+ "params": {
+  "lags": "full",
+  "use_calendar": true,
+  "use_rolling": false,
+  "num_leaves": 31,
+  "learning_rate": 0.05,
+  "min_child_samples": 20,
+  "feature_fraction": 0.9,
+  "bagging_fraction": 0.9,
+  "bagging_freq": 1,
+  "lambda_l2": 0.0,
+  "max_rounds": 2000,
+  "early_stopping_rounds": 50
+ },
+ "metrics": {
+  "mae": 462.28640303918525,
+  "rmse": 657.0766413026237,
+  "smape": 9.670835258194815,
+  "mase": 0.604309265911033
+ },
+ "train_seconds": 9.5,
+ "note": "Add calendar features of origin and target (hour, weekday, holiday) so the model can anticipate the day type of the target time, which lags alone cannot at 24 h.",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.439,
+  "6": 0.631,
+  "24": 0.743
+ },
+ "info": {
+  "best_iteration": {
+   "1": 637,
+   "6": 600,
+   "24": 513
+  },
+  "holdout_l1": {
+   "1": 0.12365128733645037,
+   "6": 0.18307568492342427,
+   "24": 0.15469873506305443
+  },
+  "n_features": 40,
+  "importance": {
+   "1": {
+    "lag_1": 66867.9,
+    "lag_168": 63348.6,
+    "lag_23": 8970.0,
+    "lag_144": 7494.4,
+    "lag_22": 7419.0,
+    "lag_24": 6226.5,
+    "hour": 5079.5,
+    "lag_120": 4857.6,
+    "lag_96": 4827.8,
+    "lag_2": 4818.2
+   },
+   "6": {
+    "lag_19": 83126.0,
+    "dow": 12940.0,
+    "lag_18": 9664.3,
+    "lag_20": 7973.4,
+    "t_hour": 7522.7,
+    "series_id": 6678.6,
+    "lag_36": 6115.5,
+    "lag_144": 5179.9,
+    "lag_1": 4996.0,
+    "lag_120": 4941.8
+   },
+   "24": {
+    "lag_144": 70483.1,
+    "lag_1": 26758.3,
+    "lag_2": 13881.8,
+    "hour": 9327.3,
+    "lag_120": 6587.6,
+    "lag_168": 5137.6,
+    "lag_96": 4771.0,
+    "lag_48": 4594.1,
+    "lag_72": 4353.6,
+    "lag_24": 4085.9
+   }
+  }
+ }
+}

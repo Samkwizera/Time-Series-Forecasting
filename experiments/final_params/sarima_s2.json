@@ -1,0 +1,7 @@
+{
+  "order": [1, 0, 1],
+  "seasonal_order": [1, 1, 1, 24],
+  "fourier_k": 0,
+  "holiday_exog": false,
+  "maxiter": 200
+}

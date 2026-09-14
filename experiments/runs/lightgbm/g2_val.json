@@ -1,0 +1,84 @@
+{
+ "model": "lightgbm",
+ "run_id": "g2_val",
+ "timestamp": "2026-09-12T19:35:32+00:00",
+ "params": {
+  "lags": "full",
+  "use_calendar": false,
+  "use_rolling": false,
+  "num_leaves": 31,
+  "learning_rate": 0.05,
+  "min_child_samples": 20,
+  "feature_fraction": 0.9,
+  "bagging_fraction": 0.9,
+  "bagging_freq": 1,
+  "lambda_l2": 0.0,
+  "max_rounds": 2000,
+  "early_stopping_rounds": 50
+ },
+ "metrics": {
+  "mae": 509.1925501735115,
+  "rmse": 723.0076765858335,
+  "smape": 10.7838789326228,
+  "mase": 0.6717114359549815
+ },
+ "train_seconds": 7.2,
+ "note": "Add lags 36-168 (two-day and weekly cycle) identified in the ACF.",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.441,
+  "6": 0.785,
+  "24": 0.789
+ },
+ "info": {
+  "best_iteration": {
+   "1": 684,
+   "6": 300,
+   "24": 508
+  },
+  "holdout_l1": {
+   "1": 0.12744042224584834,
+   "6": 0.231421584623056,
+   "24": 0.15677577371957357
+  },
+  "n_features": 32,
+  "importance": {
+   "1": {
+    "lag_168": 68243.4,
+    "lag_1": 63515.7,
+    "lag_144": 10492.1,
+    "lag_23": 8970.9,
+    "lag_24": 7774.4,
+    "lag_22": 7738.8,
+    "lag_120": 5842.1,
+    "lag_48": 5719.2,
+    "lag_72": 5541.2,
+    "lag_36": 5472.4
+   },
+   "6": {
+    "lag_19": 77852.0,
+    "lag_20": 7808.2,
+    "lag_18": 5788.9,
+    "lag_168": 5590.2,
+    "lag_36": 5111.4,
+    "lag_1": 5048.1,
+    "lag_144": 4625.5,
+    "lag_120": 4025.9,
+    "series_id": 4022.2,
+    "lag_24": 3926.0
+   },
+   "24": {
+    "lag_144": 81569.4,
+    "lag_1": 21050.5,
+    "lag_2": 15934.5,
+    "lag_120": 7089.5,
+    "lag_168": 5517.3,
+    "lag_48": 5164.4,
+    "lag_96": 5126.9,
+    "lag_72": 4764.8,
+    "lag_3": 4501.0,
+    "lag_4": 4366.3
+   }
+  }
+ }
+}

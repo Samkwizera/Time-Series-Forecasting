@@ -1,0 +1,84 @@
+{
+ "model": "lightgbm",
+ "run_id": "g6_val",
+ "timestamp": "2026-09-12T19:36:33+00:00",
+ "params": {
+  "lags": "full",
+  "use_calendar": true,
+  "use_rolling": true,
+  "num_leaves": 63,
+  "learning_rate": 0.05,
+  "min_child_samples": 20,
+  "feature_fraction": 0.9,
+  "bagging_fraction": 0.9,
+  "bagging_freq": 1,
+  "lambda_l2": 0.0,
+  "max_rounds": 2000,
+  "early_stopping_rounds": 50
+ },
+ "metrics": {
+  "mae": 485.5842412710537,
+  "rmse": 674.8205718577887,
+  "smape": 10.403342564372362,
+  "mase": 0.6515197079252163
+ },
+ "train_seconds": 9.3,
+ "note": "Opposite direction: more capacity. Together with g5 this brackets the capacity sweet spot before the Optuna search.",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.458,
+  "6": 0.68,
+  "24": 0.817
+ },
+ "info": {
+  "best_iteration": {
+   "1": 183,
+   "6": 425,
+   "24": 134
+  },
+  "holdout_l1": {
+   "1": 0.12232736522243687,
+   "6": 0.1914971799378692,
+   "24": 0.15745934384703242
+  },
+  "n_features": 48,
+  "importance": {
+   "1": {
+    "lag_168": 68240.0,
+    "lag_1": 52459.3,
+    "lag_24": 8109.7,
+    "lag_23": 5605.2,
+    "diff_24": 5534.6,
+    "lag_22": 5119.6,
+    "lag_144": 4761.5,
+    "diff_1": 4428.3,
+    "roll_mean_168": 3385.9,
+    "lag_120": 3228.0
+   },
+   "6": {
+    "lag_19": 76126.5,
+    "lag_20": 13465.5,
+    "lag_18": 12484.7,
+    "dow": 12413.8,
+    "roll_std_24": 10570.4,
+    "roll_std_168": 9786.7,
+    "t_hour": 9733.3,
+    "roll_mean_168": 9525.1,
+    "roll_mean_24": 8742.6,
+    "diff_24": 8676.4
+   },
+   "24": {
+    "lag_144": 73150.2,
+    "lag_1": 17966.3,
+    "hour": 13973.0,
+    "lag_2": 9412.2,
+    "roll_mean_168": 5234.6,
+    "lag_120": 4708.3,
+    "roll_std_168": 4516.9,
+    "roll_std_24": 3543.5,
+    "diff_24": 2936.6,
+    "roll_mean_24": 2883.7
+   }
+  }
+ }
+}

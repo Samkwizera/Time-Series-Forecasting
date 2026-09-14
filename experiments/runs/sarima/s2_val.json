@@ -1,0 +1,56 @@
+{
+ "model": "sarima",
+ "run_id": "s2_val",
+ "timestamp": "2026-09-12T19:23:38+00:00",
+ "params": {
+  "order": [
+   1,
+   0,
+   1
+  ],
+  "seasonal_order": [
+   1,
+   1,
+   1,
+   24
+  ],
+  "fourier_k": 0,
+  "holiday_exog": false,
+  "maxiter": 200
+ },
+ "metrics": {
+  "mae": 507.1342092432971,
+  "rmse": 746.9567150823991,
+  "smape": 10.765534293393719,
+  "mase": 0.6585158514030175
+ },
+ "train_seconds": 44.1,
+ "note": "Add MA terms at lag 1 and 24: PACF after seasonal differencing shows a negative spike at 24, the classic signature of a seasonal MA(1).",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.349,
+  "6": 0.761,
+  "24": 0.866
+ },
+ "info": {
+  "aic": {
+   "duomo": -1135.9787029213126,
+   "bocconi": -1261.9618351607696,
+   "navigli": -2034.587496208725,
+   "business": -2157.8170492589757,
+   "business-2": -1031.4500517557876,
+   "mixed_suburban": -2015.7046283487973,
+   "mixed_suburban-2": -1975.8651787936958
+  },
+  "converged": {
+   "duomo": true,
+   "bocconi": true,
+   "navigli": true,
+   "business": true,
+   "business-2": true,
+   "mixed_suburban": true,
+   "mixed_suburban-2": true
+  },
+  "n_params": 5
+ }
+}

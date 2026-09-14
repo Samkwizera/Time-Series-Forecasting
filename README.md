@@ -29,8 +29,8 @@ src/milan_forecast/
   models/          baseline.py, sarima.py, lgbm.py, rnn.py (LSTM/GRU), _common.py (fit/eval origins)
 scripts/           00_download 01_ingest 02_eda 03_tsa 04_train 05_tune 06_compare 07_report_assets
 run_all.sh         the whole pipeline in one command (bash); run_all.ps1 is the PowerShell equivalent
-notebooks/         run_pipeline_kaggle_colab.ipynb (same pipeline on Kaggle or Colab)
-experiments/       tuning_plan.yaml (rounds + rationale), experiment_log.md, runs/*.json, predictions/
+notebooks/         pipeline.ipynb (clean) and pipeline_executed.ipynb (completed Kaggle run)
+experiments/       tuning_plan.yaml, final_params/*.json, experiment_log.md, runs/*.json, predictions/
 reports/           figures/ and tables/ written by the scripts (inputs to the report)
 report/            report.tex (IEEE), references.bib, build.sh -> report.pdf
 video/outline.md   7-10 minute presentation plan tied to the figures
@@ -85,9 +85,10 @@ python scripts/04_train.py --model baselines --part test
 python scripts/05_tune.py --model sarima           # rounds from experiments/tuning_plan.yaml
 python scripts/05_tune.py --model lightgbm --optuna 20
 python scripts/05_tune.py --model lstm
-python scripts/04_train.py --model lightgbm --part test --run g4 --params '{...}'   # final runs
-python scripts/04_train.py --model lstm --part test --run l4 --params @params.json  # PowerShell strips JSON quotes; use a file
-python scripts/06_compare.py --runs sarima=s3 lightgbm=g4 lstm=l4
+python scripts/04_train.py --model sarima --part test --run s2 --params @experiments/final_params/sarima_s2.json
+python scripts/04_train.py --model lightgbm --part test --run g3 --params @experiments/final_params/lightgbm_g3.json
+python scripts/04_train.py --model gru --part test --run l5 --params @experiments/final_params/gru_l5.json
+python scripts/06_compare.py --runs sarima=s2 lightgbm=g3 gru=l5
 python scripts/07_report_assets.py && report/build.sh
 ```
 
@@ -98,7 +99,7 @@ with its `why` and re-run `05_tune.py --rounds <id>`.
 
 ### Kaggle / Colab
 
-Open `notebooks/run_pipeline_kaggle_colab.ipynb`. On Kaggle attach a dataset
+Open `notebooks/pipeline.ipynb`. On Kaggle attach a dataset
 containing the 62 raw files (there are public mirrors of the Telecom Italia
 Milan data; check it holds all 62 days, some only contain the first week) and set
 `RAW_DIR`; on Colab mount Drive. Kaggle's ~30 GB RAM and free GPU quota make it
@@ -127,9 +128,9 @@ On Windows without bash: `python scripts/07_report_assets.py` then `tectonic rep
 (install tectonic with `winget install tectonic` or use Overleaf with the `report/` folder).
 
 The report never hard-codes a result: `scripts/07_report_assets.py` turns the CSVs
-into `report/generated/*.tex` (tables and `\newcommand` macros). Passages whose
-interpretation must be checked against the real run are printed in red while
-`\revisemode` is 1 in `report.tex`; set it to 0 for the submission build.
+into `report/generated/*.tex` (tables and `\newcommand` macros). Passages wrapped
+in `\revise{}` can be printed in red during drafting by setting `\revisemode` to 1
+in `report.tex`. The committed submission setting is 0.
 
 ## Reproducibility notes
 

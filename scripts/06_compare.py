@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Stage 6: comparative evaluation and failure analysis of the final models.
 
-    python scripts/06_compare.py --runs sarima=s3 lightgbm=g4 lstm=l5
+    python scripts/06_compare.py --runs sarima=s2 lightgbm=g3 gru=l5
 
 The run ids refer to the test-split runs produced by scripts/04_train.py; the three
 baselines are always included.
@@ -25,7 +25,7 @@ from milan_forecast.evaluate import seasonal_naive_scale  # noqa: E402
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", default=None)
-    parser.add_argument("--runs", nargs="+", default=[], help="model=run pairs, e.g. sarima=s3 lightgbm=g4 lstm=l5")
+    parser.add_argument("--runs", nargs="+", default=[], help="model=run pairs, e.g. sarima=s2 lightgbm=g3 gru=l5")
     parser.add_argument("--part", default="test")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

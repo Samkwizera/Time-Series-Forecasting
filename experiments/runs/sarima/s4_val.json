@@ -1,0 +1,56 @@
+{
+ "model": "sarima",
+ "run_id": "s4_val",
+ "timestamp": "2026-09-12T19:27:59+00:00",
+ "params": {
+  "order": [
+   1,
+   0,
+   1
+  ],
+  "seasonal_order": [
+   1,
+   1,
+   1,
+   24
+  ],
+  "fourier_k": 3,
+  "holiday_exog": true,
+  "maxiter": 200
+ },
+ "metrics": {
+  "mae": 495.2836309990106,
+  "rmse": 683.1711941872219,
+  "smape": 11.155971870869841,
+  "mase": 0.6690583910566096
+ },
+ "train_seconds": 138.6,
+ "note": "Public holidays behave like Sundays; a holiday dummy lets the level drop without disturbing the seasonal state.",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.358,
+  "6": 0.781,
+  "24": 0.869
+ },
+ "info": {
+  "aic": {
+   "duomo": -1138.8288472486915,
+   "bocconi": -1291.8544467679112,
+   "navigli": -2036.2895798249692,
+   "business": -2201.858740968956,
+   "business-2": -1029.0454644150218,
+   "mixed_suburban": -2031.5882506535645,
+   "mixed_suburban-2": -1980.5014634061624
+  },
+  "converged": {
+   "duomo": true,
+   "bocconi": true,
+   "navigli": true,
+   "business": true,
+   "business-2": true,
+   "mixed_suburban": true,
+   "mixed_suburban-2": true
+  },
+  "n_params": 12
+ }
+}

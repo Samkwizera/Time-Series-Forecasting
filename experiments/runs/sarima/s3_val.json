@@ -1,0 +1,56 @@
+{
+ "model": "sarima",
+ "run_id": "s3_val",
+ "timestamp": "2026-09-12T19:25:33+00:00",
+ "params": {
+  "order": [
+   1,
+   0,
+   1
+  ],
+  "seasonal_order": [
+   1,
+   1,
+   1,
+   24
+  ],
+  "fourier_k": 3,
+  "holiday_exog": false,
+  "maxiter": 200
+ },
+ "metrics": {
+  "mae": 494.53565339555047,
+  "rmse": 683.7454879412252,
+  "smape": 11.127669105063438,
+  "mase": 0.6663012609714603
+ },
+ "train_seconds": 108.1,
+ "note": "Weekly cycle cannot be modelled with a 168-period SARIMA (state too large). Add 3 Fourier pairs of period 168 h as exogenous regressors (dynamic harmonic regression).",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.357,
+  "6": 0.778,
+  "24": 0.863
+ },
+ "info": {
+  "aic": {
+   "duomo": -1139.613596711284,
+   "bocconi": -1293.0666425639215,
+   "navigli": -2032.7667814172028,
+   "business": -2201.1449128735917,
+   "business-2": -1030.392984838018,
+   "mixed_suburban": -2031.20757863081,
+   "mixed_suburban-2": -1980.1120483881668
+  },
+  "converged": {
+   "duomo": true,
+   "bocconi": true,
+   "navigli": true,
+   "business": false,
+   "business-2": true,
+   "mixed_suburban": true,
+   "mixed_suburban-2": true
+  },
+  "n_params": 11
+ }
+}

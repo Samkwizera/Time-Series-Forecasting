@@ -1,0 +1,2 @@
+file,raw_size_mb,est_rows,naive_pandas_mb,n_files,naive_all_days_gb
+sms-call-internet-mi-2013-11-01.txt,307.9174871444702,4507737,275.13326941148756,62,16.65845967139866

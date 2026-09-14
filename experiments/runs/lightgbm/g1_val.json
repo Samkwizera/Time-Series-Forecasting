@@ -1,0 +1,84 @@
+{
+ "model": "lightgbm",
+ "run_id": "g1_val",
+ "timestamp": "2026-09-12T19:35:17+00:00",
+ "params": {
+  "lags": "short",
+  "use_calendar": false,
+  "use_rolling": false,
+  "num_leaves": 31,
+  "learning_rate": 0.05,
+  "min_child_samples": 20,
+  "feature_fraction": 0.9,
+  "bagging_fraction": 0.9,
+  "bagging_freq": 1,
+  "lambda_l2": 0.0,
+  "max_rounds": 2000,
+  "early_stopping_rounds": 50
+ },
+ "metrics": {
+  "mae": 499.6227751150188,
+  "rmse": 728.0689072237802,
+  "smape": 10.67187960798003,
+  "mase": 0.6421210591837623
+ },
+ "train_seconds": 7.4,
+ "note": "Lags 1-24 only: how much can trees recover from the last day alone? Establishes the value of the seasonal/weekly lags added next.",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.372,
+  "6": 0.691,
+  "24": 0.863
+ },
+ "info": {
+  "best_iteration": {
+   "1": 750,
+   "6": 541,
+   "24": 376
+  },
+  "holdout_l1": {
+   "1": 0.13298091209395851,
+   "6": 0.23282584812989066,
+   "24": 0.23078262850888978
+  },
+  "n_features": 25,
+  "importance": {
+   "1": {
+    "lag_1": 125434.9,
+    "lag_24": 20106.4,
+    "lag_23": 15856.8,
+    "lag_22": 12996.1,
+    "lag_6": 8280.7,
+    "lag_5": 8179.3,
+    "lag_3": 7084.4,
+    "lag_2": 6972.2,
+    "lag_7": 6758.2,
+    "lag_12": 6626.2
+   },
+   "6": {
+    "lag_19": 99244.2,
+    "lag_1": 12434.0,
+    "lag_20": 8480.9,
+    "lag_24": 7387.9,
+    "lag_2": 7186.3,
+    "lag_18": 6916.7,
+    "series_id": 5629.8,
+    "lag_9": 5569.0,
+    "lag_6": 5368.0,
+    "lag_8": 5214.0
+   },
+   "24": {
+    "lag_1": 94103.2,
+    "lag_2": 10685.3,
+    "lag_24": 7531.5,
+    "series_id": 4685.4,
+    "lag_6": 4587.9,
+    "lag_17": 4037.7,
+    "lag_19": 3928.7,
+    "lag_12": 3885.4,
+    "lag_11": 3860.8,
+    "lag_10": 3834.3
+   }
+  }
+ }
+}

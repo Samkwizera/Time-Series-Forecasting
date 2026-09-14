@@ -1,0 +1,56 @@
+{
+ "model": "sarima",
+ "run_id": "s1_val",
+ "timestamp": "2026-09-12T19:22:46+00:00",
+ "params": {
+  "order": [
+   1,
+   0,
+   0
+  ],
+  "seasonal_order": [
+   0,
+   1,
+   0,
+   24
+  ],
+  "fourier_k": 0,
+  "holiday_exog": false,
+  "maxiter": 200
+ },
+ "metrics": {
+  "mae": 593.9617699195455,
+  "rmse": 957.5120387950757,
+  "smape": 12.080932776428645,
+  "mase": 0.7171454148376639
+ },
+ "train_seconds": 3.3,
+ "note": "Minimal seasonal random walk + AR(1): the simplest structure consistent with the ACF (slow decay at multiples of 24). Reference point for what the seasonal difference alone buys.",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.417,
+  "6": 0.793,
+  "24": 0.941
+ },
+ "info": {
+  "aic": {
+   "duomo": -554.2160011120706,
+   "bocconi": -751.7938582415765,
+   "navigli": -1598.1119857515462,
+   "business": -1725.959116391124,
+   "business-2": -626.3224461645607,
+   "mixed_suburban": -1260.8612165582933,
+   "mixed_suburban-2": -1571.7024276579818
+  },
+  "converged": {
+   "duomo": true,
+   "bocconi": true,
+   "navigli": true,
+   "business": true,
+   "business-2": true,
+   "mixed_suburban": true,
+   "mixed_suburban-2": true
+  },
+  "n_params": 2
+ }
+}

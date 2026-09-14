@@ -1,0 +1,84 @@
+{
+ "model": "lightgbm",
+ "run_id": "g3_test",
+ "timestamp": "2026-09-12T19:46:03+00:00",
+ "params": {
+  "lags": "full",
+  "use_calendar": true,
+  "use_rolling": false,
+  "num_leaves": 31,
+  "learning_rate": 0.05,
+  "min_child_samples": 20,
+  "feature_fraction": 0.9,
+  "bagging_fraction": 0.9,
+  "bagging_freq": 1,
+  "lambda_l2": 0.0,
+  "max_rounds": 2000,
+  "early_stopping_rounds": 50
+ },
+ "metrics": {
+  "mae": 1087.2103653638087,
+  "rmse": 1481.2489811954404,
+  "smape": 36.57797644894282,
+  "mase": 1.4322856800805108
+ },
+ "train_seconds": 9.1,
+ "note": "final test run of best validation config",
+ "part": "test",
+ "mase_by_horizon": {
+  "1": 0.949,
+  "6": 1.78,
+  "24": 1.568
+ },
+ "info": {
+  "best_iteration": {
+   "1": 650,
+   "6": 697,
+   "24": 253
+  },
+  "holdout_l1": {
+   "1": 0.12527154707017565,
+   "6": 0.1890120130334864,
+   "24": 0.21530855380116637
+  },
+  "n_features": 40,
+  "importance": {
+   "1": {
+    "lag_1": 84690.7,
+    "lag_168": 70431.1,
+    "lag_23": 10683.8,
+    "lag_22": 9092.4,
+    "lag_144": 6848.6,
+    "lag_24": 6254.6,
+    "hour": 6239.7,
+    "lag_48": 5288.4,
+    "lag_96": 5100.9,
+    "lag_2": 5078.9
+   },
+   "6": {
+    "lag_19": 97834.1,
+    "dow": 15089.5,
+    "lag_20": 11501.3,
+    "t_hour": 10712.8,
+    "lag_18": 10074.8,
+    "series_id": 8993.5,
+    "lag_1": 6959.2,
+    "lag_36": 6395.4,
+    "lag_144": 6270.6,
+    "lag_168": 5916.9
+   },
+   "24": {
+    "lag_144": 58691.8,
+    "lag_1": 58601.7,
+    "lag_2": 10553.8,
+    "hour": 7834.4,
+    "lag_120": 5350.0,
+    "dow": 4012.1,
+    "t_dow": 3989.6,
+    "series_id": 3632.5,
+    "lag_168": 3489.0,
+    "lag_3": 3263.6
+   }
+  }
+ }
+}

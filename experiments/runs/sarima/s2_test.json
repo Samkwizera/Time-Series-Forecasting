@@ -1,0 +1,56 @@
+{
+ "model": "sarima",
+ "run_id": "s2_test",
+ "timestamp": "2026-09-12T19:45:47+00:00",
+ "params": {
+  "order": [
+   1,
+   0,
+   1
+  ],
+  "seasonal_order": [
+   1,
+   1,
+   1,
+   24
+  ],
+  "fourier_k": 0,
+  "holiday_exog": false,
+  "maxiter": 200
+ },
+ "metrics": {
+  "mae": 1058.336878268465,
+  "rmse": 1371.5374012699347,
+  "smape": 33.78657860075555,
+  "mase": 1.4270698188644082
+ },
+ "train_seconds": 59.5,
+ "note": "final test run of best validation config",
+ "part": "test",
+ "mase_by_horizon": {
+  "1": 0.399,
+  "6": 1.542,
+  "24": 2.341
+ },
+ "info": {
+  "aic": {
+   "duomo": -1404.7318359834273,
+   "bocconi": -1562.6421041910978,
+   "navigli": -2413.3682457488594,
+   "business": -2606.6099659339093,
+   "business-2": -1285.5817371618023,
+   "mixed_suburban": -2429.753160449207,
+   "mixed_suburban-2": -2379.533039203824
+  },
+  "converged": {
+   "duomo": true,
+   "bocconi": true,
+   "navigli": true,
+   "business": true,
+   "business-2": true,
+   "mixed_suburban": false,
+   "mixed_suburban-2": true
+  },
+  "n_params": 5
+ }
+}

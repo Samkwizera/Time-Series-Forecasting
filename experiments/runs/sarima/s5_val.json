@@ -1,0 +1,56 @@
+{
+ "model": "sarima",
+ "run_id": "s5_val",
+ "timestamp": "2026-09-12T19:35:02+00:00",
+ "params": {
+  "order": [
+   2,
+   0,
+   1
+  ],
+  "seasonal_order": [
+   1,
+   1,
+   1,
+   24
+  ],
+  "fourier_k": 5,
+  "holiday_exog": true,
+  "maxiter": 200
+ },
+ "metrics": {
+  "mae": 562.7941437069347,
+  "rmse": 770.9207563634076,
+  "smape": 12.715385884615179,
+  "mase": 0.76855910937679
+ },
+ "train_seconds": 416.3,
+ "note": "Check whether more harmonics (5) and a second AR lag improve or overfit; AIC vs validation MASE decides.",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.406,
+  "6": 1.022,
+  "24": 0.877
+ },
+ "info": {
+  "aic": {
+   "duomo": -1249.9058373463927,
+   "bocconi": -1395.0102565607647,
+   "navigli": -2043.5304926763165,
+   "business": -2261.6824149176578,
+   "business-2": -1064.5179267071064,
+   "mixed_suburban": -2039.7049915810185,
+   "mixed_suburban-2": -1989.6705224605955
+  },
+  "converged": {
+   "duomo": true,
+   "bocconi": true,
+   "navigli": true,
+   "business": true,
+   "business-2": true,
+   "mixed_suburban": true,
+   "mixed_suburban-2": true
+  },
+  "n_params": 17
+ }
+}

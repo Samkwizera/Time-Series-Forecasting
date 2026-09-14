@@ -1,0 +1,84 @@
+{
+ "model": "lightgbm",
+ "run_id": "opt02_val",
+ "timestamp": "2026-09-12T19:37:12+00:00",
+ "params": {
+  "lags": "full",
+  "use_calendar": true,
+  "use_rolling": true,
+  "num_leaves": 7,
+  "learning_rate": 0.18276027831785724,
+  "min_child_samples": 106,
+  "feature_fraction": 0.6061695553391381,
+  "bagging_fraction": 0.9,
+  "bagging_freq": 1,
+  "lambda_l2": 0.005337032762603957,
+  "max_rounds": 2000,
+  "early_stopping_rounds": 50
+ },
+ "metrics": {
+  "mae": 545.8713581653733,
+  "rmse": 747.3474156688651,
+  "smape": 12.044097890916015,
+  "mase": 0.7459361415223655
+ },
+ "train_seconds": 1.9,
+ "note": "Optuna trial 2 (TPE sampler over leaves, lr, min_child, feature_fraction, l2)",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.487,
+  "6": 0.803,
+  "24": 0.948
+ },
+ "info": {
+  "best_iteration": {
+   "1": 205,
+   "6": 229,
+   "24": 73
+  },
+  "holdout_l1": {
+   "1": 0.13195424280404033,
+   "6": 0.21222541311031384,
+   "24": 0.1662439593370079
+  },
+  "n_features": 48,
+  "importance": {
+   "1": {
+    "lag_168": 13580.9,
+    "lag_1": 11087.2,
+    "lag_24": 4236.8,
+    "t_hour": 2299.7,
+    "diff_24": 2136.8,
+    "lag_144": 1335.3,
+    "lag_23": 986.0,
+    "lag_22": 960.6,
+    "lag_72": 690.0,
+    "diff_1": 626.0
+   },
+   "6": {
+    "lag_19": 9633.7,
+    "lag_20": 7462.2,
+    "lag_18": 4315.9,
+    "t_hour": 2543.4,
+    "dow": 2533.1,
+    "series_id": 1701.3,
+    "hour": 846.6,
+    "t_dow": 836.8,
+    "roll_std_24": 722.1,
+    "diff_24": 695.4
+   },
+   "24": {
+    "lag_144": 11886.4,
+    "lag_1": 6883.0,
+    "lag_2": 5551.1,
+    "hour": 3298.3,
+    "lag_120": 903.9,
+    "lag_3": 722.7,
+    "dow": 694.5,
+    "t_dow": 683.8,
+    "roll_mean_168": 562.6,
+    "roll_mean_24": 314.5
+   }
+  }
+ }
+}

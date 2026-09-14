@@ -1,0 +1,84 @@
+{
+ "model": "lightgbm",
+ "run_id": "g5_val",
+ "timestamp": "2026-09-12T19:36:17+00:00",
+ "params": {
+  "lags": "full",
+  "use_calendar": true,
+  "use_rolling": true,
+  "num_leaves": 15,
+  "learning_rate": 0.03,
+  "min_child_samples": 50,
+  "feature_fraction": 0.9,
+  "bagging_fraction": 0.9,
+  "bagging_freq": 1,
+  "lambda_l2": 0.0,
+  "max_rounds": 2000,
+  "early_stopping_rounds": 50
+ },
+ "metrics": {
+  "mae": 502.4213821333354,
+  "rmse": 699.3908467420705,
+  "smape": 10.93492662981205,
+  "mase": 0.6817932697159813
+ },
+ "train_seconds": 5.6,
+ "note": "Regularise: fewer leaves, lower learning rate and larger leaves to test whether g4 overfits the pooled data (compare train/val gap).",
+ "part": "val",
+ "mase_by_horizon": {
+  "1": 0.471,
+  "6": 0.723,
+  "24": 0.851
+ },
+ "info": {
+  "best_iteration": {
+   "1": 391,
+   "6": 668,
+   "24": 209
+  },
+  "holdout_l1": {
+   "1": 0.1236633478719398,
+   "6": 0.19395646574173706,
+   "24": 0.1586658045832591
+  },
+  "n_features": 48,
+  "importance": {
+   "1": {
+    "lag_1": 93157.0,
+    "lag_168": 85343.4,
+    "t_hour": 10141.6,
+    "lag_23": 9244.6,
+    "hour": 9045.4,
+    "lag_24": 7060.9,
+    "lag_22": 6908.1,
+    "diff_24": 6652.1,
+    "diff_1": 5151.0,
+    "lag_144": 4682.9
+   },
+   "6": {
+    "lag_19": 111550.3,
+    "dow": 18508.0,
+    "lag_20": 18155.5,
+    "lag_18": 17775.9,
+    "t_hour": 11098.8,
+    "series_id": 10906.9,
+    "roll_mean_24": 6437.9,
+    "roll_std_24": 5867.6,
+    "diff_24": 4519.8,
+    "roll_std_168": 4265.8
+   },
+   "24": {
+    "lag_144": 115149.5,
+    "lag_1": 34064.0,
+    "lag_2": 18562.4,
+    "hour": 13480.1,
+    "lag_120": 5087.3,
+    "roll_mean_168": 3618.1,
+    "dow": 3321.4,
+    "series_id": 3122.2,
+    "t_dow": 3053.0,
+    "roll_std_168": 2228.8
+   }
+  }
+ }
+}
