@@ -40,7 +40,12 @@ def main() -> None:
     with open(selected_path) as fh:
         selected = json.load(fh)["cells"]
     with track("tsa", paths.tables_dir / "memory_log.csv"):
-        city = pd.read_parquet(paths.processed_dir / "citywide_10min.parquet")
+        city_path = paths.processed_dir / "citywide_10min.parquet"
+        if not city_path.exists():
+            raise FileNotFoundError(
+                f"{city_path} is missing. Stage 1 (scripts/01_ingest.py) has to finish first."
+            )
+        city = pd.read_parquet(city_path)
         hourly = load_hourly(cfg, cfg.forecast.target_activity)
         tsa.run_all(hourly, city, selected, cfg)
 

@@ -208,7 +208,7 @@ def load_hourly(cfg: Config, activity: str | None = None) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(
             f"{path} is missing. Ingest has not finished: run `python scripts/01_ingest.py` "
-            "and wait until it prints the hourly_*.parquet paths before starting EDA."
+            "and wait until it prints the hourly_*.parquet paths before running this stage."
         )
     df = pd.read_parquet(path)
     df.columns = df.columns.astype(int)
