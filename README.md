@@ -48,8 +48,7 @@ run_all.sh         the whole pipeline in one command (bash); run_all.ps1 is the 
 notebooks/         pipeline.ipynb (clean) and pipeline_executed.ipynb (completed Kaggle run)
 experiments/       tuning_plan.yaml, final_params/*.json, experiment_log.md, runs/*.json, predictions/
 reports/           figures/ and tables/ written by the scripts (inputs to the report)
-report/            report.tex (IEEE), references.bib, build.sh -> report.pdf
-video/outline.md   7-10 minute presentation plan tied to the figures
+report/            report.pdf, the final write-up (IEEE format)
 tests/             pytest: ingestion on a synthetic fixture, and the forecasting layer
                    (split leakage, features, metrics, DM test, all four model modules)
 ```
@@ -105,7 +104,7 @@ python scripts/04_train.py --model sarima --part test --run s2 --params @experim
 python scripts/04_train.py --model lightgbm --part test --run g3 --params @experiments/final_params/lightgbm_g3.json
 python scripts/04_train.py --model gru --part test --run l5 --params @experiments/final_params/gru_l5.json
 python scripts/06_compare.py --runs sarima=s2 lightgbm=g3 gru=l5
-python scripts/07_report_assets.py && report/build.sh
+python scripts/07_report_assets.py
 ```
 
 Every training run appends a row (parameters, validation metrics, reasoning) to
@@ -134,19 +133,15 @@ Expect roughly 25 min on a laptop CPU (SARIMA rolling forecasts and the LSTM rou
 Outputs go to `reports/smoke/` and `experiments/smoke/` (git-ignored). The
 synthetic data only exercises the code path; no number from it belongs in the report.
 
-## Building the report
+## The report
 
-```bash
-report/build.sh            # needs tectonic or TeX Live; reads reports/tables/* via scripts/07_report_assets.py
-```
+The finished write-up is `report/report.pdf`. The LaTeX source is kept outside this
+repo; only the built PDF is committed.
 
-On Windows without bash: `python scripts/07_report_assets.py` then `tectonic report/report.tex`
-(install tectonic with `winget install tectonic` or use Overleaf with the `report/` folder).
-
-The report never hard-codes a result: `scripts/07_report_assets.py` turns the CSVs
-into `report/generated/*.tex` (tables and `\newcommand` macros). Passages wrapped
-in `\revise{}` can be printed in red during drafting by setting `\revisemode` to 1
-in `report.tex`. The committed submission setting is 0.
+No result in it is hard-coded. `scripts/07_report_assets.py` reads the CSVs in
+`reports/tables/` and writes `report/generated/*.tex`, which holds every table and a
+`\newcommand` macro for every number quoted in the text. Run that script after the
+pipeline and the report is rebuilt from whatever the experiments actually produced.
 
 ## Reproducibility notes
 
