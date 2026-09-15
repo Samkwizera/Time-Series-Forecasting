@@ -240,8 +240,9 @@ def experiment_log_table(cfg, macros: list[str]) -> None:
         optuna = [r for r in recs if r["run_id"].startswith("opt")]
         for r in manual:
             note = r["note"].replace("&", "\\&").replace("%", "\\%").replace("_", "\\_")
-            if len(note) > 110:
-                note = note[:107] + "..."
+            # the single-column report has room for the full rationale; only guard runaway notes
+            if len(note) > 260:
+                note = note[:257] + "..."
             family_name = "RNN" if model == "lstm" else MODEL_NAMES[model]
             rows.append(f"{family_name} & {r['run_id'].removesuffix('_val')} & {fmt(r['metrics']['mase'], 3)} & "
                         f"{fmt(r['metrics']['smape'], 1)} & {fmt(r['train_seconds'], 0)} & {note} \\\\")
@@ -255,7 +256,7 @@ def experiment_log_table(cfg, macros: list[str]) -> None:
                                   if k in ("num_leaves", "learning_rate", "min_child_samples", "feature_fraction", "lambda_l2")).replace("_", "\\_") + r" \\")
             macros.append(f"\\newcommand{{\\optunaTrials}}{{{len(optuna)}}}")
             macros.append(f"\\newcommand{{\\optunaBestMase}}{{{fmt(best['metrics']['mase'], 3)}}}")
-    write("experiment_log_table.tex", "\\begin{tabular}{l l rr r p{8.2cm}}\n\\toprule\nModel & Run & val MASE & val sMAPE & s & Rationale for the run \\\\\n\\midrule\n"
+    write("experiment_log_table.tex", "\\begin{tabular}{l l rr r p{10.4cm}}\n\\toprule\nModel & Run & val MASE & val sMAPE & s & Rationale for the run \\\\\n\\midrule\n"
           + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n")
 
 

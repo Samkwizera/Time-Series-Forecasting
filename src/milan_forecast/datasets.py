@@ -18,8 +18,8 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
+from .calendar import calendar_flags
 from .config import Config
-from .eda import calendar_flags
 from .ingest import load_hourly
 
 
@@ -49,18 +49,8 @@ class ForecastData:
     def index(self) -> pd.DatetimeIndex:
         return next(iter(self.series.values())).index
 
-    def origins(self, part: str) -> pd.DatetimeIndex:
-        """Forecast origins whose *targets* all fall inside ``part`` and inside the data."""
-        idx = self.index
-        labels = self.split.label(idx)
-        max_h = max(self.horizons)
-        mask = np.zeros(len(idx), dtype=bool)
-        for i in range(len(idx) - max_h):
-            if labels[i + 1] == part and labels[i + max_h] == part:
-                mask[i] = True
-        # first origins don't have a full window of history behind them
-        mask[: self.input_window] = False
-        return idx[mask]
+    # NB: origin selection lives in models/_common.py (``eval_origins`` / ``fit_origins``) so that
+    # the leakage-critical rule exists in exactly one place.
 
     def frame(self) -> pd.DataFrame:
         return pd.DataFrame(self.series)

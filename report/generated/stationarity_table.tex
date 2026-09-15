@@ -1,0 +1,11 @@
+\begin{tabular}{l rr rr l}
+\toprule
+Transform & ADF & $p$ & KPSS & $p$ & Verdict \\
+\midrule
+raw & -2.14 & 0.230 & 3.63 & 0.010 & non-stationary \\
+log1p & -1.26 & 0.649 & 3.70 & 0.010 & non-stationary \\
+log1p, diff 1 & -11.91 & 0.000 & 0.00 & 0.100 & stationary \\
+log1p, seasonal diff 24 & -5.58 & 0.000 & 0.22 & 0.100 & stationary \\
+log1p, diff 1 + seasonal diff 24 & -9.82 & 0.000 & 0.01 & 0.100 & stationary \\
+\bottomrule
+\end{tabular}

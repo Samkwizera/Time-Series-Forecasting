@@ -10,7 +10,7 @@ import pandas as pd
 import seaborn as sns
 
 from .config import Config
-from .eda import calendar_flags, italian_holidays
+from .calendar import calendar_flags, italian_holidays
 from .evaluate import pairwise_dm, score_predictions, summarise
 from .plotting import PALETTE, save, setup_style
 

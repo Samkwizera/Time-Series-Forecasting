@@ -1,0 +1,14 @@
+\begin{tabular}{l rr rr rr rrr}
+\toprule
+ & \multicolumn{2}{c}{$h=1$ h} & \multicolumn{2}{c}{$h=6$ h} & \multicolumn{2}{c}{$h=24$ h} & \multicolumn{3}{c}{All horizons} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-10}
+Model & MASE & sMAPE & MASE & sMAPE & MASE & sMAPE & MASE & sMAPE & MAE \\
+\midrule
+Naive & 0.471 & 13.3 & 2.094 & 54.5 & 0.873 & 24.2 & 1.146 & 30.7 & 1,068.9 \\
+Seasonal naive (24 h) & 0.854 & 22.3 & 0.863 & 23.0 & 0.873 & 24.2 & 0.863 & 23.2 & 768.8 \\
+Seasonal naive (168 h) & 2.380 & 51.0 & 2.369 & 51.0 & 2.326 & 51.5 & 2.358 & 51.2 & 1,816.0 \\
+SARIMAX & 0.399 & 11.0 & 1.542 & 35.9 & 2.341 & 54.5 & 1.427 & 33.8 & 1,058.3 \\
+LightGBM & 0.949 & 26.1 & 1.780 & 43.0 & 1.568 & 40.6 & 1.432 & 36.6 & 1,087.2 \\
+GRU & 1.012 & 26.8 & 2.699 & 60.0 & 2.957 & 62.9 & 2.223 & 49.9 & 1,610.5 \\
+\bottomrule
+\end{tabular}

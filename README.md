@@ -5,11 +5,27 @@ Empirical study of short-term mobile traffic forecasting on the Telecom Italia
 10-minute intervals, 1 Nov 2013 - 1 Jan 2014, 62 daily files, 20.8 GB).
 
 Research question: *how does forecasting accuracy for hourly Internet activity
-differ between a statistical model (SARIMAX with weekly Fourier terms), a
-gradient-boosted tree model (LightGBM) and a recurrent network (LSTM) across
-grid cells with different land-use profiles and across 1 h, 6 h and 24 h horizons?*
+differ between a statistical model (SARIMAX), a gradient-boosted tree model
+(LightGBM) and a recurrent network (LSTM/GRU) across grid cells with different
+activity-profile labels and across 1 h, 6 h and 24 h horizons?* The labels are
+inferred from traffic profiles; they are not verified land-use categories.
 
 Repository: https://github.com/Samkwizera/Time-Series-Forecasting
+
+## Headline result
+
+On the test window (22 Dec - 1 Jan, deliberately a holiday stress test) the **24-hour
+seasonal naive is the best method overall** (mean MASE 0.863). SARIMAX (1.427) and
+LightGBM (1.432) are indistinguishable in aggregate; the GRU is clearly worst (2.223).
+SARIMAX is the strongest method in the study at the 1-hour horizon (0.399). The reason
+is that a holiday fortnight is mainly a level shift, and the seasonal naive re-anchors
+on yesterday's observed value while the learned models hold a level estimated from six
+ordinary weeks and over-forecast. See the report's *Why the seasonal naive wins* section.
+
+Validation selected SARIMAX `(1,0,1)(1,1,1)_24` **without** Fourier or holiday
+regressors, LightGBM run `g3` (full lag set + calendar, no rolling features), and a
+one-layer GRU (run `l5`) - the last by a margin too small to distinguish it from the
+comparable LSTM on a single seed.
 
 ## Repository layout
 
