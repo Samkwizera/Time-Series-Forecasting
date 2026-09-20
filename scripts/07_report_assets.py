@@ -148,25 +148,36 @@ def memory_table(tables: Path, macros: list[str]) -> None:
     rows = []
     if naive_path.exists():
         naive = pd.read_csv(naive_path).iloc[0]
+        # One decimal convention throughout: MB = 10^6 B, GB = 1000 MB, so the table
+        # row and the \naiveAllGB macro in the text are the same number.
+        naive_all_mb = naive['naive_pandas_mb'] * int(naive['n_files'])
         rows.append(f"Naive pandas load, one day (est.) & {fmt(naive['naive_pandas_mb'], 0)} & -- \\\\")
-        rows.append(f"Naive pandas load, all {int(naive['n_files'])} days (est.) & {fmt(naive['naive_all_days_gb'] * 1024, 0)} & -- \\\\")
+        rows.append(f"Naive pandas load, all {int(naive['n_files'])} days (est.) & {fmt(naive_all_mb, 0)} & -- \\\\")
         macros.append(f"\\newcommand{{\\naiveDayMB}}{{{fmt(naive['naive_pandas_mb'], 0)}}}")
-        macros.append(f"\\newcommand{{\\naiveAllGB}}{{{fmt(naive['naive_all_days_gb'], 1)}}}")
+        macros.append(f"\\newcommand{{\\naiveAllGB}}{{{fmt(naive_all_mb / 1000, 1)}}}")
         macros.append(f"\\newcommand{{\\rawDayMB}}{{{fmt(naive['raw_size_mb'], 0)}}}")
         macros.append(f"\\newcommand{{\\rawRowsM}}{{{fmt(naive['est_rows'] / 1e6, 1)}}}")
     if len(ingest):
-        rows.append(f"Streaming aggregation, per day (median) & {fmt(ingest['rss_peak_mb'].median(), 0)} & {fmt(ingest['seconds'].median(), 1)} \\\\")
-        rows.append(f"Streaming aggregation, all days (max, total) & {fmt(ingest['rss_peak_mb'].max(), 0)} & {fmt(ingest['seconds'].sum(), 0)} \\\\")
+        # rss_peak_mb is whole-process RSS, which climbs through the loop as results
+        # accumulate; its median is not a per-day cost. Report what each day adds.
+        added = (ingest['rss_peak_mb'] - ingest['rss_start_mb']).median()
+        rows.append(f"Streaming aggregation, added per day (median) & {fmt(added, 0)} & {fmt(ingest['seconds'].median(), 1)} \\\\")
+        rows.append(f"Streaming aggregation, peak over all {len(ingest)} days & {fmt(ingest['rss_peak_mb'].max(), 0)} & {fmt(ingest['seconds'].sum(), 0)} \\\\")
+        macros.append(f"\\newcommand{{\\ingestAddedMB}}{{{fmt(added, 0)}}}")
         macros.append(f"\\newcommand{{\\ingestPeakMB}}{{{fmt(ingest['rss_peak_mb'].max(), 0)}}}")
         macros.append(f"\\newcommand{{\\ingestTotalMin}}{{{fmt(ingest['seconds'].sum() / 60, 1)}}}")
         macros.append(f"\\newcommand{{\\ingestDays}}{{{len(ingest)}}}")
-    for stage in ["wide_hourly:internet", "citywide_10min", "eda", "tsa"]:
+    downstream = {"wide_hourly:internet": "Wide hourly matrix (Internet)",
+                  "citywide_10min": "Citywide 10-minute aggregation",
+                  "eda": "Exploratory analysis",
+                  "tsa": "Time-series analysis"}
+    for stage, label in downstream.items():
         s = mem[mem["stage"] == stage]
         if len(s):
-            rows.append(f"{stage.replace('_', ' ').replace(':', ' ')} & {fmt(s['rss_peak_mb'].max(), 0)} & {fmt(s['seconds'].max(), 1)} \\\\")
+            rows.append(f"{label} & {fmt(s['rss_peak_mb'].max(), 0)} & {fmt(s['seconds'].max(), 1)} \\\\")
     if len(mem):
         macros.append(f"\\newcommand{{\\pipelinePeakMB}}{{{fmt(mem['rss_peak_mb'].max(), 0)}}}")
-    write("memory_table.tex", "\\begin{tabular}{p{4.6cm} rr}\n\\toprule\nStage & RSS (MB) & Time (s) \\\\\n\\midrule\n"
+    write("memory_table.tex", "\\begin{tabular}{p{4.6cm} rr}\n\\toprule\nStage & Peak RSS (MB) & Wall time (s) \\\\\n\\midrule\n"
           + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n")
 
 
@@ -226,6 +237,15 @@ def eda_macros(tables: Path, macros: list[str]) -> None:
                 macros.append(f"\\newcommand{{\\chosenSilhouette}}{{{s.loc[chosen_k]:.2f}}}")
 
 
+def tex_escape(text: str, limit: int | None = None) -> str:
+    out = (text.replace("&", "\\&").replace("%", "\\%").replace("_", "\\_")
+           # a bare ~ is a non-breaking space in LaTeX and vanishes from the PDF
+           .replace("~", "$\\sim$"))
+    if limit and len(out) > limit:
+        out = out[:limit - 3] + "..."
+    return out
+
+
 def experiment_log_table(cfg, macros: list[str]) -> None:
     """Condensed tuning trail: manual rounds only (Optuna trials summarised in one line)."""
     runs_dir = cfg.paths.experiments_dir / "runs"
@@ -239,13 +259,13 @@ def experiment_log_table(cfg, macros: list[str]) -> None:
         manual = [r for r in recs if not r["run_id"].startswith("opt")]
         optuna = [r for r in recs if r["run_id"].startswith("opt")]
         for r in manual:
-            note = r["note"].replace("&", "\\&").replace("%", "\\%").replace("_", "\\_")
-            # the single-column report has room for the full rationale; only guard runaway notes
-            if len(note) > 260:
-                note = note[:257] + "..."
+            note = tex_escape(r["note"], limit=260)
+            # what the run showed comes first: the rationale only makes sense against it
+            observed = tex_escape(r.get("observed", ""), limit=340)
+            cell = (rf"\emph{{Observed:}} {observed} " if observed else "") + rf"\emph{{Next:}} {note}"
             family_name = "RNN" if model == "lstm" else MODEL_NAMES[model]
             rows.append(f"{family_name} & {r['run_id'].removesuffix('_val')} & {fmt(r['metrics']['mase'], 3)} & "
-                        f"{fmt(r['metrics']['smape'], 1)} & {fmt(r['train_seconds'], 0)} & {note} \\\\")
+                        f"{fmt(r['metrics']['smape'], 1)} & {fmt(r['train_seconds'], 0)} & {cell} \\\\")
         if optuna:
             best = min(optuna, key=lambda r: r["metrics"]["mase"])
             family_name = "RNN" if model == "lstm" else MODEL_NAMES[model]
@@ -256,7 +276,7 @@ def experiment_log_table(cfg, macros: list[str]) -> None:
                                   if k in ("num_leaves", "learning_rate", "min_child_samples", "feature_fraction", "lambda_l2")).replace("_", "\\_") + r" \\")
             macros.append(f"\\newcommand{{\\optunaTrials}}{{{len(optuna)}}}")
             macros.append(f"\\newcommand{{\\optunaBestMase}}{{{fmt(best['metrics']['mase'], 3)}}}")
-    write("experiment_log_table.tex", "\\begin{tabular}{l l rr r p{10.4cm}}\n\\toprule\nModel & Run & val MASE & val sMAPE & s & Rationale for the run \\\\\n\\midrule\n"
+    write("experiment_log_table.tex", "\\begin{tabular}{l l rr r p{10.4cm}}\n\\toprule\nModel & Run & val MASE & val sMAPE & s & What the run showed, and the reasoning for the next one \\\\\n\\midrule\n"
           + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n")
 
 

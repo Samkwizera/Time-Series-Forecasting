@@ -12,6 +12,8 @@ inferred from traffic profiles; they are not verified land-use categories.
 
 Repository: https://github.com/Samkwizera/Time-Series-Forecasting
 
+Video presentation: https://youtu.be/qvyPCLiWLv0
+
 ## Headline result
 
 On the test window (22 Dec - 1 Jan, deliberately a holiday stress test) the **24-hour
@@ -20,7 +22,7 @@ LightGBM (1.432) are indistinguishable in aggregate; the GRU is clearly worst (2
 SARIMAX is the strongest method in the study at the 1-hour horizon (0.399). The reason
 is that a holiday fortnight is mainly a level shift, and the seasonal naive re-anchors
 on yesterday's observed value while the learned models hold a level estimated from six
-ordinary weeks and over-forecast. See the report's *Why the seasonal naive wins* section.
+ordinary weeks and over-forecast. See the report's *Why the benchmark wins* section.
 
 Validation selected SARIMAX `(1,0,1)(1,1,1)_24` **without** Fourier or holiday
 regressors, LightGBM run `g3` (full lag set + calendar, no rolling features), and a
@@ -107,10 +109,18 @@ python scripts/06_compare.py --runs sarima=s2 lightgbm=g3 gru=l5
 python scripts/07_report_assets.py
 ```
 
-Every training run appends a row (parameters, validation metrics, reasoning) to
-`experiments/experiment_log.md` and writes `experiments/runs/<model>/<run>.json`.
-To continue the iterative loop, add a round to `experiments/tuning_plan.yaml`
-with its `why` and re-run `05_tune.py --rounds <id>`.
+Every training run appends a row to `experiments/experiment_log.md` and writes
+`experiments/runs/<model>/<run>.json`. The row carries the full parameter set, the
+in-sample and validation metrics, *observed* (what the numbers showed, filled in after
+the run) and *reasoning* (the argument for the configuration, written before it).
+`05_tune.py` reads each round's result back and writes its observation before starting
+the next one, so the log is a trail of decisions rather than a list of settings.
+To continue the iterative loop, add a round to `experiments/tuning_plan.yaml` with its
+`why` and re-run `05_tune.py --rounds <id>`.
+
+The in-sample column comes from `--train-metrics`, which scores the fitted model on the
+data it was fitted on; the train/val gap it exposes is what separates overfitting from
+an underpowered feature set. Runs made before that option existed show `-`.
 
 ### Kaggle / Colab
 
@@ -132,16 +142,6 @@ Expect roughly 25 min on a laptop CPU (SARIMA rolling forecasts and the LSTM rou
 
 Outputs go to `reports/smoke/` and `experiments/smoke/` (git-ignored). The
 synthetic data only exercises the code path; no number from it belongs in the report.
-
-## The report
-
-The finished write-up is `report/report.pdf`. The LaTeX source is kept outside this
-repo; only the built PDF is committed.
-
-No result in it is hard-coded. `scripts/07_report_assets.py` reads the CSVs in
-`reports/tables/` and writes `report/generated/*.tex`, which holds every table and a
-`\newcommand` macro for every number quoted in the text. Run that script after the
-pipeline and the report is rebuilt from whatever the experiments actually produced.
 
 ## Reproducibility notes
 
