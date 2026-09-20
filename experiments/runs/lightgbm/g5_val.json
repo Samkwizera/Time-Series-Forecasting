@@ -80,5 +80,7 @@
     "roll_std_168": 2228.8
    }
   }
- }
+ },
+ "observed": "val MASE 0.682, worse again than g4; tightening capacity does not recover what g4 lost, so g4's problem is the feature set and not overfitting. This round was meant to compare the train/val gap, but we did not log the in-sample score at the time, so that comparison is missing.",
+ "train_mase": null
 }

@@ -52,5 +52,7 @@
    "mixed_suburban-2": true
   },
   "n_params": 5
- }
+ },
+ "observed": "test MASE 1.427 against 0.659 on validation - worse than the 24 h seasonal naive baseline on the same window. The test fortnight is not the same regime as the fitting window, and the same collapse appears in all three families.",
+ "train_mase": null
 }

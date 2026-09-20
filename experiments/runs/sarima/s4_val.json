@@ -52,5 +52,7 @@
    "mixed_suburban-2": true
   },
   "n_params": 12
- }
+ },
+ "observed": "val MASE 0.669, flat against s3 (+0.003) and still above s2; the validation fortnight contains too few holidays for the dummy to move the mean error. Change not kept.",
+ "train_mase": null
 }

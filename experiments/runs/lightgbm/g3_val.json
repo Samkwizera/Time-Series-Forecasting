@@ -80,5 +80,7 @@
     "lag_24": 4085.9
    }
   }
- }
+ },
+ "observed": "val MASE 0.604, 0.068 better than g2 and the best result of the entire study; the calendar features of the target time are what make the long lags usable, which confirms the g2 reading. New best.",
+ "train_mase": null
 }

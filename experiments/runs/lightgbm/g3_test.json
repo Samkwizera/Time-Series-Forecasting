@@ -80,5 +80,7 @@
     "lag_3": 3263.6
    }
   }
- }
+ },
+ "observed": "test MASE 1.432, indistinguishable from SARIMAX despite the 0.055 validation gap between them; the degradation is a property of the test window, not of the model.",
+ "train_mase": null
 }

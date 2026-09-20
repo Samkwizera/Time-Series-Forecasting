@@ -80,5 +80,7 @@
     "dow": 6399.9
    }
   }
- }
+ },
+ "observed": "val MASE 0.643; 0.037 better than opt12; still above g3 (0.604).",
+ "train_mase": null
 }

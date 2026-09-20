@@ -80,5 +80,7 @@
     "roll_mean_24": 314.5
    }
   }
- }
+ },
+ "observed": "val MASE 0.746; 0.055 worse than opt01; still above g3 (0.604).",
+ "train_mase": null
 }

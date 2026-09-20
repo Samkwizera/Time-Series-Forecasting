@@ -80,5 +80,7 @@
     "t_hour": 4909.7
    }
   }
- }
+ },
+ "observed": "val MASE 0.691; 0.016 better than opt00; still above g3 (0.604).",
+ "train_mase": null
 }

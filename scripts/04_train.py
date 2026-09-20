@@ -9,7 +9,7 @@ Examples
 --------
     python scripts/04_train.py --model baselines --part test
     python scripts/04_train.py --model sarima --part val --run s1 --params '{"order": [2,0,1]}' --note "PACF suggests AR(2)"
-    python scripts/04_train.py --model lightgbm --part val --run g1 --params '{"lags": "short"}'
+    python scripts/04_train.py --model lightgbm --part val --run g1 --params '{"lags": "short"}' --train-metrics
     python scripts/04_train.py --model lstm --part val --run l1 --params '{"hidden_size": 128}'
 """
 
@@ -43,6 +43,11 @@ def main() -> None:
                         help="JSON dict of model parameters overriding the defaults, or @path/to/params.json "
                              "(useful on Windows shells that strip quotes)")
     parser.add_argument("--note", default="", help="reasoning recorded in the experiment log")
+    parser.add_argument("--observed", default="",
+                        help="what this run's numbers showed, recorded in the log next to the reasoning")
+    parser.add_argument("--train-metrics", action="store_true",
+                        help="also score the model in-sample, so the log carries the train/val gap "
+                             "(validation runs only: the in-sample fit is on the train split)")
     parser.add_argument("--series", nargs="*", default=None, help="restrict to these selected-cell names")
     args = parser.parse_args()
 
@@ -61,18 +66,21 @@ def main() -> None:
     labels = data.split.label(data.index)
     scales = {n: seasonal_naive_scale(s[labels == "train"]) for n, s in data.series.items()}
 
+    def run_part(part: str) -> tuple[pd.DataFrame, dict]:
+        if args.model == "baselines":
+            return pd.concat([baseline.forecast(data, part, m) for m in ("naive", "seasonal_naive", "weekly_naive")]), {}
+        if args.model == "sarima":
+            return sarima.forecast(data, part, params)
+        if args.model == "lightgbm":
+            return lgbm.forecast(data, part, params, seed=cfg.forecast.seed)
+        return rnn.forecast(data, part, params, seed=cfg.forecast.seed)
+
+    if args.model in ("lstm", "gru"):
+        params = {"cell": args.model, **params}
+
     logger = ExperimentLogger(cfg, args.model)
     with track(f"train:{args.model}:{args.run}:{args.part}", paths.tables_dir / "memory_log.csv") as ctx:
-        info: dict = {}
-        if args.model == "baselines":
-            preds = pd.concat([baseline.forecast(data, args.part, m) for m in ("naive", "seasonal_naive", "weekly_naive")])
-        elif args.model == "sarima":
-            preds, info = sarima.forecast(data, args.part, params)
-        elif args.model == "lightgbm":
-            preds, info = lgbm.forecast(data, args.part, params, seed=cfg.forecast.seed)
-        else:
-            params = {"cell": args.model, **params}
-            preds, info = rnn.forecast(data, args.part, params, seed=cfg.forecast.seed)
+        preds, info = run_part(args.part)
         ctx["sample"]()
 
     metrics = score_predictions(preds, scales)
@@ -82,13 +90,26 @@ def main() -> None:
 
     preds.to_parquet(pred_dir / f"{args.model}_{args.run}_{args.part}.parquet", index=False)
     metrics.to_csv(pred_dir / f"{args.model}_{args.run}_{args.part}_metrics.csv", index=False)
+    train_mase = None
+    if args.train_metrics and args.part != "val":
+        # a test run fits on train+val, so scoring it on train alone would compare two
+        # different fits and the gap would mean nothing
+        logging.warning("--train-metrics only applies to validation runs; skipping the in-sample pass")
+    elif args.train_metrics:
+        # refit on the same window and score in-sample: the gap against the validation
+        # MASE below is what tells overfitting apart from an underpowered feature set
+        train_preds, _ = run_part("train")
+        train_mase = float(score_predictions(train_preds, scales).groupby("model")["mase"].mean().iloc[0])
+        logging.info("in-sample MASE %.3f vs %s MASE %.3f", train_mase, args.part, overall["mase"].iloc[0])
+
     if args.model != "baselines":
         summary = overall.iloc[0].to_dict()
         per_h = metrics.groupby("horizon")["mase"].mean().round(3).to_dict()
         defaults = {"sarima": sarima, "lightgbm": lgbm}.get(args.model, rnn).DEFAULT_PARAMS
         # log the full effective config, not just the overrides, so runs are comparable later
         effective = {**defaults, **params}
-        logger.log(f"{args.run}_{args.part}", effective, summary, note=args.note,
+        logger.log(f"{args.run}_{args.part}", effective, summary, note=args.note, observed=args.observed,
+                   train_mase=train_mase,
                    extra={"part": args.part, "mase_by_horizon": per_h, "info": info})
 
 

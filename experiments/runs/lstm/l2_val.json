@@ -188,5 +188,7 @@
   "n_params": 7135,
   "device": "cuda",
   "n_train_windows": 4872
- }
+ },
+ "observed": "val MASE 0.747, 0.026 worse than l1; a week of context does not help at 32 units: seven times the input length with the same capacity, and fewer usable training windows.",
+ "train_mase": null
 }

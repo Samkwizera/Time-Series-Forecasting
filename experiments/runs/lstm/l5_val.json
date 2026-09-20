@@ -23,7 +23,7 @@
   "mase": 0.7110350578193636
  },
  "train_seconds": 7.1,
- "note": "GRU has fewer parameters than LSTM at equal hidden size; test whether the gating simplification helps with ~6 weeks of data.",
+ "note": "GRU has fewer parameters than LSTM at equal hidden size; test whether the gating simplification helps with about six weeks of data.",
  "part": "val",
  "mase_by_horizon": {
   "1": 0.465,
@@ -238,5 +238,7 @@
   "n_params": 19807,
   "device": "cuda",
   "n_train_windows": 4872
- }
+ },
+ "observed": "val MASE 0.711, 0.003 better than l3 and the best of the family, though that margin is within run-to-run noise rather than a clear win for the GRU gating.",
+ "train_mase": null
 }

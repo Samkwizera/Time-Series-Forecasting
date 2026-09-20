@@ -80,5 +80,7 @@
     "t_dow": 9354.0
    }
   }
- }
+ },
+ "observed": "val MASE 0.651; 0.054 better than opt03; still above g3 (0.604).",
+ "train_mase": null
 }

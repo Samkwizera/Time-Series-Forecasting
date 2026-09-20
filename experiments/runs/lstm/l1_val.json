@@ -333,5 +333,7 @@
   "n_params": 7135,
   "device": "cuda",
   "n_train_windows": 5880
- }
+ },
+ "observed": "val MASE 0.721; training was stable, but the floor of the architecture is already worse than every LightGBM round. With about six weeks of data the recurrent model starts behind the trees.",
+ "train_mase": null
 }

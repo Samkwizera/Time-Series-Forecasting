@@ -80,5 +80,7 @@
     "roll_std_24": 2457.3
    }
   }
- }
+ },
+ "observed": "val MASE 0.664, 0.060 worse than g3; the rolling means and standard deviations smooth away the sharp hour-to-hour structure the 1 h horizon depends on. Change not kept for the final model.",
+ "train_mase": null
 }

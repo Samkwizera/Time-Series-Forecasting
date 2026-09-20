@@ -80,5 +80,7 @@
     "roll_std_168": 1224.2
    }
   }
- }
+ },
+ "observed": "val MASE 0.705; 0.050 worse than opt07; still above g3 (0.604).",
+ "train_mase": null
 }

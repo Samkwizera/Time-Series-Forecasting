@@ -80,5 +80,7 @@
     "series_id": 470.7
    }
   }
- }
+ },
+ "observed": "val MASE 0.706; still above g3 (0.604).",
+ "train_mase": null
 }

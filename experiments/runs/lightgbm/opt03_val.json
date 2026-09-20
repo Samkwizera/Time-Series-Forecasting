@@ -80,5 +80,7 @@
     "series_id": 4007.9
    }
   }
- }
+ },
+ "observed": "val MASE 0.705; 0.041 better than opt02; still above g3 (0.604).",
+ "train_mase": null
 }

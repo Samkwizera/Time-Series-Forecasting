@@ -80,5 +80,7 @@
     "roll_std_24": 6377.4
    }
   }
- }
+ },
+ "observed": "val MASE 0.646; 0.034 better than opt16; still above g3 (0.604).",
+ "train_mase": null
 }

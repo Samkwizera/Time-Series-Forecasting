@@ -80,5 +80,7 @@
     "series_id": 10293.4
    }
   }
- }
+ },
+ "observed": "val MASE 0.651; 0.008 worse than opt13; still above g3 (0.604).",
+ "train_mase": null
 }

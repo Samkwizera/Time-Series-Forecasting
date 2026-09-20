@@ -80,5 +80,7 @@
     "diff_24": 6201.6
    }
   }
- }
+ },
+ "observed": "val MASE 0.664; 0.022 worse than opt09; still above g3 (0.604).",
+ "train_mase": null
 }

@@ -106,12 +106,43 @@ def pairwise_dm(preds: pd.DataFrame, reference: str) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # Experiment logging
 # --------------------------------------------------------------------------- #
+def annotate_run(cfg: Config, model: str, run_id: str, observed: str) -> None:
+    """Record what a finished run showed, in its JSON record and in its markdown row.
+
+    The reasoning column is written before a run; this one can only be written after it,
+    which is why it is filled in a second pass instead of at logging time.
+    """
+    record = cfg.paths.experiments_dir / "runs" / model / f"{run_id}.json"
+    if record.exists():
+        data = json.loads(record.read_text())
+        data["observed"] = observed
+        record.write_text(json.dumps(data, indent=1, default=str))
+
+    md = cfg.paths.experiments_dir / "experiment_log.md"
+    if not md.exists():
+        return
+    prefix = f"| {model} | {run_id} |"
+    lines = md.read_text().splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.startswith(prefix):
+            cells = line.split("|")
+            if len(cells) >= 12:  # leading empty field + 10 columns + trailing newline
+                cells[-3] = f" {observed} "
+                lines[i] = "|".join(cells)
+    md.write_text("".join(lines))
+
+
 class ExperimentLogger:
     """Writes one JSON per run and appends a row to experiments/experiment_log.md.
 
-    The markdown log is the human-readable trail required for the tuning section:
-    every row has the parameters, the validation score and the reasoning ("why next").
+    The markdown log is the human-readable trail required for the tuning section: every
+    row has the parameters, the in-sample and validation scores, what the numbers showed
+    ("observed") and the argument for the configuration that follows ("reasoning").
     """
+
+    HEADER = ("| model | run | part | params | train MASE | MAE | sMAPE | MASE | s | "
+              "observed | reasoning / next step |\n"
+              "|---|---|---|---|---|---|---|---|---|---|---|\n")
 
     def __init__(self, cfg: Config, model: str):
         self.dir = cfg.paths.experiments_dir / "runs" / model
@@ -123,20 +154,26 @@ class ExperimentLogger:
     def start(self) -> None:
         self._t0 = time.perf_counter()
 
-    def log(self, run_id: str, params: dict, metrics: dict, note: str = "", extra: dict | None = None) -> Path:
+    def log(self, run_id: str, params: dict, metrics: dict, note: str = "", observed: str = "",
+            train_mase: float | None = None, extra: dict | None = None) -> Path:
         elapsed = round(time.perf_counter() - self._t0, 1)
         record = {"model": self.model, "run_id": run_id, "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                  "params": params, "metrics": metrics, "train_seconds": elapsed, "note": note, **(extra or {})}
+                  "params": params, "metrics": metrics, "train_mase": train_mase, "train_seconds": elapsed,
+                  "observed": observed, "note": note, **(extra or {})}
         path = self.dir / f"{run_id}.json"
         path.write_text(json.dumps(record, indent=1, default=str))
         new = not self.md.exists()
         with open(self.md, "a") as fh:
             if new:
-                fh.write("# Experiment log\n\nOne row per training run. `val_*` metrics are on the validation split; "
-                         "the *Reasoning / next step* column records why the following run was configured as it was.\n\n")
-                fh.write("| model | run | params | val MAE | val sMAPE | val MASE | s | reasoning / next step |\n")
-                fh.write("|---|---|---|---|---|---|---|---|\n")
+                fh.write("# Experiment log\n\nOne row per training run, in the order the runs were made.\n"
+                         "*observed* is what this run's numbers showed once they were in; *reasoning / next step* is the "
+                         "argument for the configuration that follows. `train MASE` is the in-sample score of the same "
+                         "fit, recorded when 04_train.py is called with --train-metrics.\n\n")
+                fh.write(self.HEADER)
             p = ", ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in params.items())
-            fh.write(f"| {self.model} | {run_id} | {p} | {metrics.get('mae', float('nan')):.3g} | "
-                     f"{metrics.get('smape', float('nan')):.2f} | {metrics.get('mase', float('nan')):.3f} | {elapsed} | {note} |\n")
+            tr = "-" if train_mase is None else f"{train_mase:.3f}"
+            part = run_id.rsplit("_", 1)[-1]
+            fh.write(f"| {self.model} | {run_id} | {part} | {p} | {tr} | {metrics.get('mae', float('nan')):.3g} | "
+                     f"{metrics.get('smape', float('nan')):.2f} | {metrics.get('mase', float('nan')):.3f} | "
+                     f"{elapsed} | {observed} | {note} |\n")
         return path

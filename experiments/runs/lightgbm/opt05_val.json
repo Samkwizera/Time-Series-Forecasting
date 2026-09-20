@@ -80,5 +80,7 @@
     "roll_mean_24": 7760.4
    }
   }
- }
+ },
+ "observed": "val MASE 0.633; 0.018 better than opt04; still above g3 (0.604). Best of the 20 trials, and still 0.029 above g3: the search could not recover the ground lost by its fixed use_rolling=True base.",
+ "train_mase": null
 }

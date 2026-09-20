@@ -24,23 +24,58 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from milan_forecast.config import load_config  # noqa: E402
+from milan_forecast.evaluate import annotate_run  # noqa: E402
 
 
-def run_round(model: str, run: str, params: dict, why: str, config: str | None, extra: list[str]) -> float:
+def read_result(model: str, run: str, config: str | None) -> dict:
+    cfg = load_config(config)
+    return json.loads((cfg.paths.experiments_dir / "runs" / model / f"{run}_val.json").read_text())
+
+
+def observation(record: dict, previous: dict | None, best: tuple[str, float] | None) -> str:
+    """One sentence on what this round's numbers showed, written from the numbers alone.
+
+    Anything the plan could not know in advance lives here: the direction and size of the
+    move against the previous round, the standing best, and the in-sample gap when it was
+    measured. The hand-written reading of *why* belongs in the reasoning of the next round.
+    """
+    mase = record["metrics"]["mase"]
+    parts = [f"val MASE {mase:.3f}"]
+    if previous is not None:
+        delta = mase - previous["metrics"]["mase"]
+        word = "worse" if delta > 0 else "better"
+        parts.append(f"{abs(delta):.3f} {word} than {previous['run_id'].removesuffix('_val')}")
+    if best is not None and mase > best[1] + 1e-9:
+        parts.append(f"still above {best[0]} ({best[1]:.3f}); change not kept")
+    elif previous is not None:
+        parts.append("new best so far")
+    train_mase = record.get("train_mase")
+    if train_mase:
+        gap = mase - train_mase
+        parts.append(f"in-sample {train_mase:.3f}, train/val gap {gap:+.3f}"
+                     + (" (fits the training window far better than the validation one)" if gap > 0.15 else ""))
+    return "; ".join(parts) + "."
+
+
+def run_round(model: str, run: str, params: dict, why: str, config: str | None, extra: list[str],
+              previous: dict | None = None, best: tuple[str, float] | None = None) -> dict:
     cmd = [sys.executable, str(ROOT / "scripts" / "04_train.py"), "--model", model, "--part", "val",
-           "--run", run, "--params", json.dumps(params), "--note", why] + extra
+           "--run", run, "--params", json.dumps(params), "--note", why, "--train-metrics"] + extra
     if config:
         cmd += ["--config", config]
     logging.info("round %s: %s", run, params)
     subprocess.run(cmd, check=True)
-    cfg = load_config(config)
-    record = json.loads((cfg.paths.experiments_dir / "runs" / model / f"{run}_val.json").read_text())
-    mase = record["metrics"]["mase"]
-    logging.info("round %s -> val MASE %.3f", run, mase)
-    return mase
+    record = read_result(model, run, config)
+    # the result is read back and interpreted before the next round is launched
+    observed = observation(record, previous, best)
+    annotate_run(load_config(config), model, f"{run}_val", observed)
+    record["observed"] = observed
+    logging.info("round %s -> %s", run, observed)
+    return record
 
 
-def optuna_search(model: str, n_trials: int, config: str | None, extra: list[str], base: dict) -> None:
+def optuna_search(model: str, n_trials: int, config: str | None, extra: list[str], base: dict,
+                  best: tuple[str, float] | None = None) -> None:
     import optuna
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -52,10 +87,15 @@ def optuna_search(model: str, n_trials: int, config: str | None, extra: list[str
                   "min_child_samples": trial.suggest_int("min_child_samples", 5, 200, log=True),
                   "feature_fraction": trial.suggest_float("feature_fraction", 0.5, 1.0),
                   "lambda_l2": trial.suggest_float("lambda_l2", 1e-3, 10.0, log=True)}
-        return run_round(model, f"opt{trial.number:02d}", params,
-                         f"Optuna trial {trial.number} (TPE sampler over leaves, lr, min_child, feature_fraction, l2)",
-                         config, extra)
+        record = run_round(model, f"opt{trial.number:02d}", params,
+                           f"Optuna trial {trial.number} (TPE sampler over leaves, lr, min_child, feature_fraction, l2)",
+                           config, extra, best=objective.best)
+        mase = record["metrics"]["mase"]
+        if objective.best is None or mase < objective.best[1]:
+            objective.best = (f"opt{trial.number:02d}", mase)
+        return mase
 
+    objective.best = best  # the manual rounds set the bar the search has to clear
     study = optuna.create_study(direction="minimize", sampler=optuna.samplers.TPESampler(seed=42))
     study.optimize(objective, n_trials=n_trials)
     cfg = load_config(config)
@@ -79,17 +119,24 @@ def main() -> None:
 
     extra = ["--series", *args.series] if args.series else []
     plan = yaml.safe_load(open(args.plan))[args.model]
-    results = {}
+    results: dict[str, float] = {}
+    previous: dict | None = None
+    best: tuple[str, float] | None = None
     for rnd in plan:
         if args.rounds and rnd["run"] not in args.rounds:
             continue
-        results[rnd["run"]] = run_round(args.model, rnd["run"], rnd["params"], rnd["why"], args.config, extra)
+        record = run_round(args.model, rnd["run"], rnd["params"], rnd["why"], args.config, extra,
+                           previous=previous, best=best)
+        mase = record["metrics"]["mase"]
+        results[rnd["run"]] = mase
+        previous = record
+        if best is None or mase < best[1]:
+            best = (rnd["run"], mase)
     if results:
-        best = min(results, key=results.get)
-        logging.info("manual rounds: %s -> best %s", {k: round(v, 3) for k, v in results.items()}, best)
+        logging.info("manual rounds: %s -> best %s", {k: round(v, 3) for k, v in results.items()}, best[0])
     if args.optuna and args.model == "lightgbm":
         base = {"lags": "full", "use_calendar": True, "use_rolling": True}
-        optuna_search(args.model, args.optuna, args.config, extra, base)
+        optuna_search(args.model, args.optuna, args.config, extra, base, best=best)
 
 
 if __name__ == "__main__":

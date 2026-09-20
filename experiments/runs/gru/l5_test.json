@@ -388,5 +388,7 @@
   "n_params": 19807,
   "device": "cuda",
   "n_train_windows": 6048
- }
+ },
+ "observed": "test MASE 2.223, the sharpest degradation of the three; the recurrent model extrapolates worst outside the level range it was trained on.",
+ "train_mase": null
 }

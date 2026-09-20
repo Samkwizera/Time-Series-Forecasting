@@ -183,5 +183,7 @@
   "n_params": 24479,
   "device": "cuda",
   "n_train_windows": 4872
- }
+ },
+ "observed": "val MASE 0.714, 0.033 better than l2 and past l1: l2 was capacity-limited at the longer window, as suspected. Best of the family so far.",
+ "train_mase": null
 }

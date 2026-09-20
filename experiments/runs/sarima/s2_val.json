@@ -52,5 +52,7 @@
    "mixed_suburban-2": true
   },
   "n_params": 5
- }
+ },
+ "observed": "val MASE 0.659, 0.058 better than s1 and the best SARIMAX result of the family; the seasonal MA(1) term the PACF pointed at earns its 13x fit time (3 s to 44 s). New best.",
+ "train_mase": null
 }

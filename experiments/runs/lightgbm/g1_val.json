@@ -80,5 +80,7 @@
     "lag_10": 3834.3
    }
   }
- }
+ },
+ "observed": "val MASE 0.642 in 7 s: lags 1-24 alone beat the best SARIMAX (0.659) at a sixth of the cost, so the pooled tree model is the stronger base to tune.",
+ "train_mase": null
 }

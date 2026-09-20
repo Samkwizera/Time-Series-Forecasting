@@ -408,5 +408,7 @@
   "n_params": 24479,
   "device": "cuda",
   "n_train_windows": 4872
- }
+ },
+ "observed": "val MASE 0.720, 0.009 worse than l5; the lower learning rate and weight decay did not find a better optimum. Search stopped here: l5 (GRU) is the recurrent configuration taken to the test split.",
+ "train_mase": null
 }

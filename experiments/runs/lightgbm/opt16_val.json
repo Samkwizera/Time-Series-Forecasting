@@ -80,5 +80,7 @@
     "lag_3": 2809.7
    }
   }
- }
+ },
+ "observed": "val MASE 0.680; 0.008 worse than opt15; still above g3 (0.604).",
+ "train_mase": null
 }

@@ -1,7 +1,8 @@
 # Ordered tuning rounds. Each round is one validation-split run of scripts/04_train.py.
 # `why` is written *before* the run: what the previous result suggested and what this
-# change is meant to test. After each round scripts/05_tune.py appends the result to
-# experiments/experiment_log.md, so the log reads as the actual experimental trail.
+# change is meant to test. After each round scripts/05_tune.py reads the result back,
+# writes what it showed into the `observed` column of experiments/experiment_log.md, and
+# only then starts the next round - so the log reads as the actual experimental trail.
 #
 # Rounds are grouped by model. Later rounds may reference the best of the previous ones.
 

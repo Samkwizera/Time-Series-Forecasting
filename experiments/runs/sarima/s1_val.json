@@ -52,5 +52,7 @@
    "mixed_suburban-2": true
   },
   "n_params": 2
- }
+ },
+ "observed": "val MASE 0.717 in 3 s; the seasonal difference alone is already well inside the 24 h seasonal naive baseline (MASE 1.0). The daily cycle is the dominant structure.",
+ "train_mase": null
 }

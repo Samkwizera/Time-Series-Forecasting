@@ -52,5 +52,7 @@
    "mixed_suburban-2": true
   },
   "n_params": 11
- }
+ },
+ "observed": "val MASE 0.666, 0.007 worse than s2 for 2.5x the fit time (108 s); the weekly Fourier terms add nothing the daily seasonal term had not already captured at these horizons. Change not kept.",
+ "train_mase": null
 }

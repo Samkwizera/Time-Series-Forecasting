@@ -80,5 +80,7 @@
     "roll_mean_24": 2883.7
    }
   }
- }
+ },
+ "observed": "val MASE 0.652, better than g4 and g5 but still 0.048 above g3, which closes the capacity question: the sweet spot is wide and none of it reaches g3. Flaw to note: g5, g6 and the Optuna search that follows all keep use_rolling=True, the setting g4 had already shown to be the worse one.",
+ "train_mase": null
 }

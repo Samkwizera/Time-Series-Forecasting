@@ -11,7 +11,14 @@ HOLDOUT_DAYS = 7
 
 
 def fit_parts(part: str) -> tuple[str, ...]:
-    """Splits whose data may be used for fitting when evaluating on ``part``."""
+    """Splits whose data may be used for fitting when evaluating on ``part``.
+
+    ``part="train"`` scores a model on the very data it was fitted on. That is not a
+    forecast, it is the in-sample fit, and it exists only so the log can carry the
+    train/val gap that the tuning rounds argue about.
+    """
+    if part == "train":
+        return ("train",)
     if part == "val":
         return ("train",)
     if part == "test":

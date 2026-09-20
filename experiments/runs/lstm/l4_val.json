@@ -188,5 +188,7 @@
   "n_params": 57759,
   "device": "cuda",
   "n_train_windows": 4872
- }
+ },
+ "observed": "val MASE 0.793, the worst run of the study; two layers plus dropout is far more model than six weeks of data support. Change not kept.",
+ "train_mase": null
 }

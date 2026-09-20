@@ -52,5 +52,7 @@
    "mixed_suburban-2": true
   },
   "n_params": 17
- }
+ },
+ "observed": "val MASE 0.769, the worst and most expensive run of the family (416 s); five harmonics plus a second AR lag overfit the fitting window, as the AIC/MASE disagreement predicted. Search stopped here: s2 is the SARIMAX configuration taken to the test split.",
+ "train_mase": null
 }

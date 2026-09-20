@@ -80,5 +80,7 @@
     "lag_4": 4366.3
    }
   }
- }
+ },
+ "observed": "val MASE 0.672, 0.030 worse than g1; the long lags add columns the trees spend splits on without the calendar context that would make them informative. Retested in g3 rather than dropped.",
+ "train_mase": null
 }
