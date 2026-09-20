@@ -15,15 +15,11 @@ dist/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# LaTeX build artefacts (the built PDF is kept)
-report/*.aux
-report/*.bbl
-report/*.blg
-report/*.log
-report/*.out
-report/*.fls
-report/*.fdb_latexmk
-report/*.synctex.gz
+# report/ holds the write-up. Only the finished PDF belongs on GitHub: the LaTeX
+# source, the bibliography, the build script, the generated tables and every build
+# artefact stay local. Anything else dropped in this folder is ignored by default.
+report/*
+!report/report.pdf
 
 # Video recordings. The presentation is submitted and linked as a URL, never committed:
 # the files are large and GitHub is not the place for them. video/outline.md is kept.
@@ -38,9 +34,10 @@ report/*.synctex.gz
 reports/smoke/
 experiments/smoke/
 
+# Scratch space kept locally
+tmp/
+
 # OS
 .DS_Store
+Thumbs.db
 
-# Report artefacts. scripts/07_report_assets.py writes the tables and number macros here;
-# only the built PDF is kept in the repo.
-report/generated/
